@@ -1,0 +1,31 @@
+{
+  "name": "soksak-plugin-design-studio",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "soksak 디자인 스튜디오 플러그인 — 컴포넌트 조립형 페이지 빌더",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "doctor": "soksak-plugin-doctor",
+    "prepublishOnly": "npm run build && npx --yes soksak-plugin-doctor .",
+    "test-unit": "npm run typecheck && vitest run"
+  },
+  "dependencies": {
+    "mermaid": "^11.4.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.24.2",
+    "typescript": "~5.9.3",
+    "vitest": "^2.1.8",
+    "soksak-plugin-doctor": "github:soksak-ai/soksak-plugin-doctor"
+  }
+}

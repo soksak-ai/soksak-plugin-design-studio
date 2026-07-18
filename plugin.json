@@ -1,0 +1,277 @@
+{
+  "spec": "soksak-spec-plugin@1",
+  "id": "soksak-plugin-design-studio",
+  "name": {
+    "ko": "디자인 스튜디오",
+    "en": "Design Studio"
+  },
+  "version": "0.0.1",
+  "repo": "https://github.com/soksak-ai/soksak-plugin-design-studio.git",
+  "description": {
+    "ko": "컴포넌트 조립형 페이지 빌더 — 23종 섹션 카탈로그와 변형을 쌓아 랜딩페이지를 만들고, 템플릿 부분 교체·자연어 지시·인라인 편집·인스펙터·구조 트리·버전 히스토리로 다듬는다. 헤드리스: 모든 기능이 명령이라 CLI/MCP 로 구동한다.",
+    "en": "Component-composition page builder — stack 23 section kinds with variants into a landing page, then refine with template part-swaps, natural-language instructions, inline editing, an inspector, a structure tree, and version history. Headless: every capability is a command, driven from CLI/MCP."
+  },
+  "entry": "main.js",
+  "permissions": [
+    "ui",
+    "commands",
+    "data",
+    "programs"
+  ],
+  "contributes": {
+    "views": [
+      {
+        "id": "studio",
+        "title": {
+          "ko": "디자인 스튜디오",
+          "en": "Design Studio"
+        },
+        "icon": "◧",
+        "placements": [
+          "content"
+        ],
+        "status": [],
+        "defaultPlacement": "content"
+      }
+    ],
+    "programs": [
+      {
+        "id": "design-studio",
+        "title": {
+          "ko": "디자인 스튜디오",
+          "en": "Design Studio"
+        },
+        "path": {
+          "ko": "디자인",
+          "en": "Design"
+        },
+        "kind": "view",
+        "view": "studio"
+      }
+    ],
+    "commands": [
+      {
+        "name": "ping",
+        "title": {
+          "ko": "플러그인 상태를 점검합니다",
+          "en": "Pings the plugin"
+        }
+      },
+      {
+        "name": "state",
+        "title": {
+          "ko": "문서 상태를 조회합니다",
+          "en": "Reads the document state"
+        }
+      },
+      {
+        "name": "reset",
+        "title": {
+          "ko": "현재 페이지를 비웁니다",
+          "en": "Resets the current page"
+        },
+        "danger": "destructive"
+      },
+      {
+        "name": "page.add",
+        "title": {
+          "ko": "페이지를 추가합니다",
+          "en": "Adds a page"
+        }
+      },
+      {
+        "name": "page.list",
+        "title": {
+          "ko": "페이지를 나열합니다",
+          "en": "Lists pages"
+        }
+      },
+      {
+        "name": "page.open",
+        "title": {
+          "ko": "페이지를 엽니다",
+          "en": "Opens a page"
+        }
+      },
+      {
+        "name": "section.add",
+        "title": {
+          "ko": "섹션을 추가합니다",
+          "en": "Adds a section"
+        }
+      },
+      {
+        "name": "section.list",
+        "title": {
+          "ko": "섹션을 나열합니다",
+          "en": "Lists sections"
+        }
+      },
+      {
+        "name": "section.update",
+        "title": {
+          "ko": "섹션을 수정합니다",
+          "en": "Updates a section"
+        }
+      },
+      {
+        "name": "section.remove",
+        "title": {
+          "ko": "섹션을 삭제합니다",
+          "en": "Removes a section"
+        },
+        "danger": "destructive"
+      },
+      {
+        "name": "section.move",
+        "title": {
+          "ko": "섹션 순서를 옮깁니다",
+          "en": "Moves a section"
+        }
+      },
+      {
+        "name": "section.swap",
+        "title": {
+          "ko": "섹션 변형을 교체합니다",
+          "en": "Swaps a section variant"
+        }
+      },
+      {
+        "name": "part.add",
+        "title": {
+          "ko": "섹션 내부 항목을 추가합니다",
+          "en": "Adds an item inside a section"
+        }
+      },
+      {
+        "name": "part.update",
+        "title": {
+          "ko": "섹션 내부 항목을 수정합니다",
+          "en": "Updates an item inside a section"
+        }
+      },
+      {
+        "name": "part.remove",
+        "title": {
+          "ko": "섹션 내부 항목을 삭제합니다",
+          "en": "Removes an item inside a section"
+        },
+        "danger": "destructive"
+      },
+      {
+        "name": "template.list",
+        "title": {
+          "ko": "템플릿을 나열합니다",
+          "en": "Lists templates"
+        }
+      },
+      {
+        "name": "template.apply",
+        "title": {
+          "ko": "템플릿을 적용합니다",
+          "en": "Applies a template"
+        }
+      },
+      {
+        "name": "ai",
+        "title": {
+          "ko": "자연어 지시를 실행합니다",
+          "en": "Runs a natural-language instruction"
+        }
+      },
+      {
+        "name": "undo",
+        "title": {
+          "ko": "실행을 취소합니다",
+          "en": "Undoes the last change"
+        }
+      },
+      {
+        "name": "redo",
+        "title": {
+          "ko": "실행취소를 되돌립니다",
+          "en": "Redoes the undone change"
+        }
+      },
+      {
+        "name": "history.list",
+        "title": {
+          "ko": "버전 히스토리를 나열합니다",
+          "en": "Lists version history"
+        }
+      },
+      {
+        "name": "history.restore",
+        "title": {
+          "ko": "버전을 복원합니다",
+          "en": "Restores a version"
+        }
+      },
+      {
+        "name": "device.set",
+        "title": {
+          "ko": "미리보기 기기를 바꿉니다",
+          "en": "Sets the preview device"
+        }
+      },
+      {
+        "name": "dark.set",
+        "title": {
+          "ko": "페이지 다크 모드를 바꿉니다",
+          "en": "Sets the page dark mode"
+        }
+      },
+      {
+        "name": "layout.set",
+        "title": {
+          "ko": "페이지 레이아웃을 바꿉니다",
+          "en": "Sets the page layout"
+        }
+      },
+      {
+        "name": "accent.set",
+        "title": {
+          "ko": "액센트 컬러를 바꿉니다",
+          "en": "Sets the accent color"
+        }
+      }
+    ],
+    "nodes": [
+      {
+        "id": "tab",
+        "description": {
+          "ko": "좌측 패널 탭 — tab/<files|assets>. 클릭하면 그 탭으로 전환합니다",
+          "en": "Left panel tab — tab/<files|assets>. Click switches to that tab"
+        }
+      },
+      {
+        "id": "lib",
+        "description": {
+          "ko": "컴포넌트 라이브러리 항목 — lib/<타입>. 클릭하면 페이지 끝에 그 섹션을 추가합니다",
+          "en": "Component library item — lib/<Type>. Click appends that section"
+        }
+      },
+      {
+        "id": "tpl",
+        "description": {
+          "ko": "템플릿 카드 — tpl/<이름>. 클릭하면 그 템플릿으로 페이지를 교체합니다",
+          "en": "Template card — tpl/<name>. Click replaces the page with that template"
+        }
+      },
+      {
+        "id": "section",
+        "description": {
+          "ko": "캔버스 섹션 — section/<id>. 클릭하면 선택되어 인스펙터가 열립니다",
+          "en": "Canvas section — section/<id>. Click selects it and opens the inspector"
+        }
+      },
+      {
+        "id": "page",
+        "description": {
+          "ko": "페이지 항목 — page/<id>. 클릭하면 그 페이지로 전환합니다",
+          "en": "Page item — page/<id>. Click switches to that page"
+        }
+      }
+    ]
+  }
+}
