@@ -7,7 +7,6 @@ import { createRoot, type Root } from "react-dom/client";
 import App from "@/view/App";
 import { GLOBAL_CSS } from "@/styles";
 import { StudioStore, type CommandOutcome, type ExecFn, type StudioFacade } from "@/store";
-import { RemoteStudioStore } from "@/view/remoteStore";
 import { buildCommands } from "@/commands";
 
 interface RuntimeApp {
@@ -105,10 +104,10 @@ export default {
   views: {
     studio: {
       async mount(context: ViewContext): Promise<void> {
-        const execute = context.app.commands?.execute;
-        if (execute) {
-          const store = new RemoteStudioStore((command, params) => execute(command, params));
-          await store.init();
+        if (context.app.commands?.execute) {
+          // 창-realm 로더: 컨트롤러와 뷰가 같은 모듈 인스턴스 — 컨트롤러 스토어(단일 권위)를
+          // 직접 구독한다. CLI/MCP 명령의 변이가 즉시 뷰에 반영된다(폴링 0, 원격 미러 불요).
+          const store = await storePromise;
           mountApp(context.root, store);
         } else {
           // preview role — 커맨드 표면이 없다. 로컬 시드 스토어로 정적 미리보기.

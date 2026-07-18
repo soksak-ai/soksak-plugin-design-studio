@@ -9,11 +9,13 @@ type Handler = (params: Record<string, unknown>) => Promise<CommandOutcome>;
 
 const PART_KEYS: readonly PartListKey[] = ["links", "cards", "plans", "faqs", "fields", "cols"];
 
+// 레지스트리 프록시의 표준 답변은 message(data) 로 만든다 — data.message 에도 실어
+// CLI/MCP 한 줄 답이 명령명으로 열화하지 않게 한다(MESSAGE-PROTOCOL §3).
 const ok = (message: string, data?: Record<string, unknown>): CommandOutcome => ({
   ok: true,
   code: "OK",
   message,
-  ...(data ? { data } : {}),
+  data: { ...(data ?? {}), message },
 });
 const err = (code: string, message: string): CommandOutcome => ({ ok: false, code, message });
 

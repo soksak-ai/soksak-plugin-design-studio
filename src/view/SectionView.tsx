@@ -7,7 +7,7 @@ import { CATALOG, SECTION_TYPES, colorsFor, darkBg, padDefaults } from "@/core/m
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import { Editable, stop, type ViewApi } from "@/view/common";
 import { ImageSlot } from "@/view/ImageSlot";
-import { MiniFlow } from "@/view/MiniFlow";
+import { Mermaid } from "@/view/Mermaid";
 
 interface Props {
   s: Section;
@@ -755,7 +755,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {h2Title({ textAlign: "center" })}
-          <MiniFlow code={s.code ?? ""} dark={dk} />
+          <Mermaid code={s.code ?? ""} dark={dk} />
         </div>
       );
 
