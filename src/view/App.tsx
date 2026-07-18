@@ -12,27 +12,87 @@ import { Canvas } from "@/view/Canvas";
 import { InspectorBody, InspectorRail } from "@/view/Inspector";
 import { TreePanel } from "@/view/TreePanel";
 
-export default function App({ store }: { store: StudioFacade }) {
+/** 재시작 복원(B3)으로 오가는 뷰-로컬 상태 스냅샷 — JSON 직렬화 가능 값만. */
+interface ViewRestoreState {
+  v: 1;
+  selectedId: string | null;
+  selPart: SelPart | null;
+  selElemKey: string | null;
+  panelL: boolean;
+  panelR: boolean;
+  tab: "files" | "assets";
+  openGroup: "components" | "templates";
+  search: string;
+  treeCollapsed: Record<string, boolean>;
+}
+
+function parseRestore(raw: unknown): Partial<ViewRestoreState> {
+  if (!raw || typeof raw !== "object") return {};
+  const r = raw as Record<string, unknown>;
+  const out: Partial<ViewRestoreState> = {};
+  if (typeof r.selectedId === "string") out.selectedId = r.selectedId;
+  const sp = r.selPart as { listKey?: unknown; idx?: unknown } | null | undefined;
+  if (sp && typeof sp === "object" && typeof sp.listKey === "string" && typeof sp.idx === "number")
+    out.selPart = sp as SelPart;
+  if (typeof r.selElemKey === "string") out.selElemKey = r.selElemKey;
+  if (typeof r.panelL === "boolean") out.panelL = r.panelL;
+  if (typeof r.panelR === "boolean") out.panelR = r.panelR;
+  if (r.tab === "files" || r.tab === "assets") out.tab = r.tab;
+  if (r.openGroup === "components" || r.openGroup === "templates") out.openGroup = r.openGroup;
+  if (typeof r.search === "string") out.search = r.search;
+  if (r.treeCollapsed && typeof r.treeCollapsed === "object")
+    out.treeCollapsed = r.treeCollapsed as Record<string, boolean>;
+  return out;
+}
+
+export default function App({
+  store,
+  restore,
+  onViewState,
+}: {
+  store: StudioFacade;
+  restore?: unknown;
+  onViewState?: (state: unknown) => void;
+}) {
   const S = useStudio(store);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const [R] = useState(() => parseRestore(restore));
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selPart, setSelPart] = useState<SelPart | null>(null);
-  const [selElemKey, setSelElemKey] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(R.selectedId ?? null);
+  const [selPart, setSelPart] = useState<SelPart | null>(R.selPart ?? null);
+  const [selElemKey, setSelElemKey] = useState<string | null>(R.selElemKey ?? null);
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
   const [dropIdx, setDropIdx] = useState<number | null>(null);
   const [addAt, setAddAt] = useState<number | "end" | null>(null);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
   const [mobNavOpen, setMobNavOpen] = useState(false);
   const [mobTocOpen, setMobTocOpen] = useState(false);
-  const [treeCollapsed, setTreeCollapsed] = useState<Record<string, boolean>>({});
+  const [treeCollapsed, setTreeCollapsed] = useState<Record<string, boolean>>(R.treeCollapsed ?? {});
 
-  const [panelL, setPanelL] = useState(true);
+  const [panelL, setPanelL] = useState(R.panelL ?? true);
   const [libFlyout, setLibFlyout] = useState(false);
-  const [panelR, setPanelR] = useState(true);
-  const [tab, setTab] = useState<"files" | "assets">("assets");
-  const [openGroup, setOpenGroup] = useState<"components" | "templates">("components");
-  const [search, setSearch] = useState("");
+  const [panelR, setPanelR] = useState(R.panelR ?? true);
+  const [tab, setTab] = useState<"files" | "assets">(R.tab ?? "assets");
+  const [openGroup, setOpenGroup] = useState<"components" | "templates">(R.openGroup ?? "components");
+  const [search, setSearch] = useState(R.search ?? "");
+
+  // 뷰-로컬 상태 보고(B3) — 변경마다 관찰 스냅샷을 뷰 레코드에 싣는다(재시작 복원 seam).
+  useEffect(() => {
+    if (!onViewState) return;
+    const state: ViewRestoreState = {
+      v: 1,
+      selectedId,
+      selPart,
+      selElemKey,
+      panelL,
+      panelR,
+      tab,
+      openGroup,
+      search,
+      treeCollapsed,
+    };
+    onViewState(state);
+  }, [onViewState, selectedId, selPart, selElemKey, panelL, panelR, tab, openGroup, search, treeCollapsed]);
 
   // 선택된 섹션이 스택에서 사라지면(undo·외부 명령) 선택 해제
   useEffect(() => {

@@ -21,6 +21,10 @@ interface ViewContext {
   app: RuntimeApp;
   root: HTMLElement;
   signal: AbortSignal;
+  /** 복원 seam(B3) — 재시작 복원 마운트에 관찰됐던 뷰 상태가 돌아온다. 새 뷰는 null. */
+  restore?: { cwd: string | null; state: unknown } | null;
+  /** 뷰-로컬 관찰 상태 보고 — 뷰 레코드에 영속돼 restore.state 로 돌아온다(콘텐츠 배치 전용). */
+  setRestoreState?: (state: unknown) => void;
 }
 
 class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
@@ -52,7 +56,11 @@ const storePromise = new Promise<StudioStore>((resolve) => {
 // 뷰 마운트 — Shadow DOM 격리 렌더(디자인 전역 CSS 주입).
 const mounts = new WeakMap<HTMLElement, Root>();
 
-function mountApp(container: HTMLElement, store: StudioFacade) {
+function mountApp(
+  container: HTMLElement,
+  store: StudioFacade,
+  view?: { restore?: unknown; onViewState?: (state: unknown) => void },
+) {
   unmountApp(container);
   container.style.position = "relative";
   const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
@@ -69,7 +77,7 @@ function mountApp(container: HTMLElement, store: StudioFacade) {
   const root = createRoot(host);
   root.render(
     <ErrBoundary>
-      <App store={store} />
+      <App store={store} restore={view?.restore} onViewState={view?.onViewState} />
     </ErrBoundary>,
   );
   mounts.set(container, root);
@@ -110,7 +118,10 @@ export default {
           // 창-realm 로더: 컨트롤러와 뷰가 같은 모듈 인스턴스 — 컨트롤러 스토어(단일 권위)를
           // 직접 구독한다. CLI/MCP 명령의 변이가 즉시 뷰에 반영된다(폴링 0, 원격 미러 불요).
           const store = await storePromise;
-          mountApp(context.root, store);
+          mountApp(context.root, store, {
+            restore: context.restore?.state,
+            onViewState: context.setRestoreState?.bind(context),
+          });
         } else {
           // preview role — 커맨드 표면이 없다. 로컬 시드 스토어로 정적 미리보기.
           const store = new StudioStore();

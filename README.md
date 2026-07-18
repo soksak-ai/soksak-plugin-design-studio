@@ -25,6 +25,10 @@ the whole document can be driven from `sok` CLI or MCP without opening the view.
   first render. The build rewrites third-party prototype shadow-assignments (`X.valueOf = …`)
   into own-property defines so the bundle survives the host's frozen `Object.prototype`
   (tauri `security.freezePrototype`).
+- **Restore** — the document survives restarts via the kv row; view-local state (selection,
+  panels, library tab, search, tree folds) rides the host restore seam (`restore.state` /
+  `setRestoreState`), so a restored tab comes back exactly as left. A restored selection whose
+  section no longer exists is dropped, never resurrected.
 - **Live view** — the window-realm loader runs controller and view in one module instance, so
   the open view subscribes to the authoritative store directly: every CLI/MCP mutation is
   visible immediately, with zero polling. Cross-window too: each window's store subscribes to
