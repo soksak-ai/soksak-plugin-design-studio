@@ -15,7 +15,7 @@
     "test-unit": "npm run typecheck && vitest run"
   },
   "dependencies": {
-    "mermaid": "^11.4.1",
+    "mermaid": "^11.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -24,8 +24,8 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "esbuild": "^0.24.2",
+    "soksak-plugin-doctor": "github:soksak-ai/soksak-plugin-doctor",
     "typescript": "~5.9.3",
-    "vitest": "^2.1.8",
-    "soksak-plugin-doctor": "github:soksak-ai/soksak-plugin-doctor"
+    "vitest": "^2.1.8"
   }
 }

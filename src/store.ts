@@ -78,6 +78,7 @@ export interface StudioState {
   sideFixed: boolean;
   mobBarFixed: boolean;
   statusMsg: string;
+  epoch: number;
 }
 
 type Listener = () => void;
@@ -113,6 +114,8 @@ export class StudioStore {
   private mobBarFixed = false;
   private statusMsg = "";
   private snapshot: StudioState | null = null;
+  /** 외부발 스택 교체(커밋·undo·페이지 전환·재수화)마다 증가 — contentEditable 리마운트 키. */
+  private epoch = 0;
 
   constructor(app: AppLike) {
     this.app = app;
@@ -149,6 +152,7 @@ export class StudioStore {
         sideFixed: this.sideFixed,
         mobBarFixed: this.mobBarFixed,
         statusMsg: this.statusMsg,
+        epoch: this.epoch,
       };
     }
     return this.snapshot;
@@ -182,7 +186,10 @@ export class StudioStore {
       await this.persistSettings();
     }
     const onChange = () => {
-      void this.hydrate().then(() => this.notify());
+      void this.hydrate().then(() => {
+        this.epoch += 1;
+        this.notify();
+      });
     };
     this.subs.push(data.watch(PAGES_COLL, undefined, onChange));
     this.subs.push(data.watch(SETTINGS_COLL, undefined, onChange));
@@ -284,6 +291,7 @@ export class StudioStore {
     p.stack = nextStack;
     p.history = r.history;
     p.historyIdx = r.historyIdx;
+    this.epoch += 1;
     this.statusMsg = label;
     void this.persistPage(this.curPage);
     this.notify();
@@ -325,6 +333,7 @@ export class StudioStore {
     if (!p) return null;
     if (p.id !== this.curPage) {
       this.curPage = p.id;
+      this.epoch += 1;
       this.statusMsg = "페이지 전환: " + p.name;
       this.notify();
     }
@@ -472,6 +481,7 @@ export class StudioStore {
     const label = p.history[p.historyIdx].label;
     p.historyIdx -= 1;
     p.stack = clone(p.history[p.historyIdx].stack);
+    this.epoch += 1;
     this.statusMsg = "실행취소: " + label;
     void this.persistPage(this.curPage);
     this.notify();
@@ -483,6 +493,7 @@ export class StudioStore {
     if (p.historyIdx >= p.history.length - 1) return false;
     p.historyIdx += 1;
     p.stack = clone(p.history[p.historyIdx].stack);
+    this.epoch += 1;
     this.statusMsg = "다시실행: " + p.history[p.historyIdx].label;
     void this.persistPage(this.curPage);
     this.notify();
@@ -500,6 +511,7 @@ export class StudioStore {
     if (i < 0 || i >= p.history.length) return false;
     p.historyIdx = i;
     p.stack = clone(p.history[i].stack);
+    this.epoch += 1;
     this.statusMsg = "v" + version + " 복원됨";
     void this.persistPage(this.curPage);
     this.notify();
