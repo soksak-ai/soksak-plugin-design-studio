@@ -1,5 +1,5 @@
 // 좌측 라이브러리 — Files(페이지)/Assets(컴포넌트·템플릿) 탭, 검색, 접기 레일, 오버레이 플라이아웃.
-import type { StudioStore, StudioState } from "@/store";
+import type { StudioFacade, StudioState } from "@/store";
 import { CATALOG, SECTION_TYPES, TEMPLATES } from "@/core/model";
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import type { ViewApi } from "@/view/common";
@@ -57,7 +57,7 @@ export function LibraryRail({ L }: { L: LibraryUi }) {
   );
 }
 
-export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: StudioStore; V: ViewApi; L: LibraryUi }) {
+export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: StudioFacade; V: ViewApi; L: LibraryUi }) {
   const accent = S.accent;
   const q = L.search.trim().toLowerCase();
   const isOverlay = !L.panelL && L.libFlyout;
@@ -85,7 +85,7 @@ export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: Studio
 
   const libItems = SECTION_TYPES.filter((t) => !q || t.toLowerCase().includes(q) || CATALOG[t].ko.includes(q));
   const tplItems = TEMPLATES.filter((t) => !q || t.name.toLowerCase().includes(q));
-  const pages = store.pageList().filter((p) => !q || p.name.toLowerCase().includes(q));
+  const pages = S.pages.filter((p) => !q || p.name.toLowerCase().includes(q));
 
   return (
     <div

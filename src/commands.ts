@@ -1,35 +1,21 @@
-// 명령 카탈로그 — 전부 같은 스토어를 조작. app.commands.register 로 CLI/MCP 자동노출.
-// 등록 key 는 plugin.json contributes.commands 와 exact-match(선언 ≡ 실제).
+// 명령 카탈로그 — 정적 handler 맵(신 격리 런타임). 키는 plugin.json contributes.commands 와
+// exact-match(선언 ≡ 실제, lifecycle.ready inventory 대조). 파라미터 검증은 핸들러 소유
+// (paramsAuthority=handler)이고 결과는 {ok, code, message, data} 봉투다.
 import type { PartListKey, SectionType } from "@/types";
 import { CATALOG, SECTION_TYPES, TEMPLATES } from "@/core/model";
-import { ACCENT_OPTIONS, isSectionType, type StudioStore } from "@/store";
+import { ACCENT_OPTIONS, isSectionType, type CommandOutcome, type StudioStore } from "@/store";
 
-interface ParamSpec {
-  type: "string" | "number" | "boolean" | "json";
-  description: string;
-  required?: boolean;
-  enum?: readonly string[];
-  default?: unknown;
-}
-interface CommandSpec {
-  description: string;
-  params?: Record<string, ParamSpec>;
-  returns?: string;
-  danger?: "destructive" | "inject";
-  examples?: readonly string[];
-  message?: (d: any) => string;
-  handler: (params: Record<string, unknown>) => Promise<object> | object;
-}
-interface CommandsApi {
-  register(name: string, spec: CommandSpec): { dispose(): void } | (() => void);
-}
-export interface AppCtx {
-  app: { commands?: CommandsApi };
-  subscriptions: Array<{ dispose(): void } | (() => void)>;
-}
+type Handler = (params: Record<string, unknown>) => Promise<CommandOutcome>;
 
 const PART_KEYS: readonly PartListKey[] = ["links", "cards", "plans", "faqs", "fields", "cols"];
-const err = (code: string, message: string) => ({ ok: false, code, message });
+
+const ok = (message: string, data?: Record<string, unknown>): CommandOutcome => ({
+  ok: true,
+  code: "OK",
+  message,
+  ...(data ? { data } : {}),
+});
+const err = (code: string, message: string): CommandOutcome => ({ ok: false, code, message });
 
 const compactSection = (s: { id: string; type: SectionType; variant: number; bg: string; title?: string; vis?: string }) => ({
   id: s.id,
@@ -41,81 +27,71 @@ const compactSection = (s: { id: string; type: SectionType; variant: number; bg:
   vis: s.vis ?? "all",
 });
 
-export function registerCommands(ctx: AppCtx, store: StudioStore): void {
-  const commands = ctx.app.commands;
-  if (!commands?.register) return;
-  const reg = (name: string, spec: CommandSpec) => ctx.subscriptions.push(commands.register(name, spec));
+/** 뷰 미러가 당겨 가는 전체 상태 — 원격 스토어(remoteStore)와의 유일한 계약. */
+function fullState(store: StudioStore): Record<string, unknown> {
+  const s = store.get();
+  return {
+    pages: s.pages,
+    curPage: s.curPage,
+    sections: s.stack,
+    layout: s.layout,
+    history: s.history,
+    historyIdx: s.historyIdx,
+    device: s.device,
+    pageDark: s.pageDark,
+    accent: s.accent,
+    shellBrand: s.shellBrand,
+    logoMode: s.logoMode,
+    logoIcon: s.logoIcon,
+    sideNav: s.sideNav,
+    sideFixed: s.sideFixed,
+    mobBarFixed: s.mobBarFixed,
+    statusMsg: s.statusMsg,
+    epoch: s.epoch,
+  };
+}
 
-  reg("ping", {
-    description: "플러그인 적재/버전 확인(E2E)",
-    message: (d) => `디자인 스튜디오 v${d.version} 정상`,
-    handler: () => ({ ok: true, plugin: "soksak-plugin-design-studio", version: "0.0.1" }),
-  });
+export function buildCommands(storeReady: () => Promise<StudioStore>): Record<string, Handler> {
+  const withStore =
+    (fn: (store: StudioStore, params: Record<string, unknown>) => CommandOutcome): Handler =>
+    async (params) => {
+      const store = await storeReady();
+      try {
+        return fn(store, params ?? {});
+      } catch (e) {
+        return err("INTERNAL", e instanceof Error ? e.message : String(e));
+      }
+    };
 
-  reg("state", {
-    description: "문서 상태 스냅샷 — 페이지 목록·현재 페이지·섹션 스택·미리보기 설정",
-    returns: "{ pages, curPage, sections, layout, device, pageDark, accent, historyLen, historyIdx, statusMsg }",
-    handler: () => {
+  return {
+    ping: withStore(() => ok("디자인 스튜디오 v0.0.1 정상", { plugin: "soksak-plugin-design-studio", version: "0.0.1" })),
+
+    state: withStore((store) => {
       const s = store.get();
-      return {
-        ok: true,
-        pages: store.pageList(),
-        curPage: s.curPage,
-        sections: s.stack.map(compactSection),
-        layout: s.layout,
-        device: s.device,
-        pageDark: s.pageDark,
-        accent: s.accent,
-        historyLen: s.history.length,
-        historyIdx: s.historyIdx,
-        statusMsg: s.statusMsg,
-      };
-    },
-  });
+      return ok(`페이지 ${s.pages.length}개 · 섹션 ${s.stack.length}개`, fullState(store));
+    }),
 
-  reg("reset", {
-    description: "현재 페이지의 섹션을 전부 비운다(히스토리에 남아 undo 가능)",
-    danger: "destructive",
-    message: () => "페이지를 비웠습니다",
-    handler: () => {
+    reset: withStore((store) => {
       store.reset();
-      return { ok: true, sections: [] };
-    },
-  });
+      return ok("페이지를 비웠습니다", { sections: [] });
+    }),
 
-  reg("page.add", {
-    description: "페이지를 추가하고 그 페이지로 전환",
-    params: { name: { type: "string", description: "페이지 이름(생략 시 page-N)" } },
-    message: (d) => `페이지 '${d.page.name}' 추가됨`,
-    handler: (p) => ({ ok: true, page: store.pageAdd(p.name == null ? undefined : String(p.name)) }),
-  });
+    "page.add": withStore((store, p) => {
+      const page = store.pageAdd(p.name == null ? undefined : String(p.name));
+      return ok(`페이지 '${page.name}' 추가됨`, { page });
+    }),
 
-  reg("page.list", {
-    description: "페이지 목록(섹션 수·활성 여부 포함)",
-    message: (d) => `페이지 ${d.pages.length}개`,
-    handler: () => ({ ok: true, pages: store.pageList() }),
-  });
+    "page.list": withStore((store) => {
+      const pages = store.get().pages;
+      return ok(`페이지 ${pages.length}개`, { pages });
+    }),
 
-  reg("page.open", {
-    description: "페이지 전환(id 또는 이름)",
-    params: { page: { type: "string", description: "페이지 id 또는 이름", required: true } },
-    message: (d) => `페이지 '${d.page.name}' 열림`,
-    handler: (p) => {
+    "page.open": withStore((store, p) => {
       const page = store.pageOpen(String(p.page ?? ""));
-      return page ? { ok: true, page } : err("NOT_FOUND", `page not found: '${String(p.page)}'`);
-    },
-  });
+      return page ? ok(`페이지 '${page.name}' 열림`, { page }) : err("NOT_FOUND", `page not found: '${String(p.page)}'`);
+    }),
 
-  reg("section.add", {
-    description: "섹션 추가 — 23종 타입, 변형·위치 지정 가능",
-    params: {
-      type: { type: "string", description: "섹션 타입", required: true, enum: SECTION_TYPES },
-      variant: { type: "number", description: "변형 인덱스(기본 0)" },
-      index: { type: "number", description: "삽입 위치(생략 시 끝)" },
-    },
-    examples: ['section.add {"type":"Hero"}', 'section.add {"type":"Pricing","variant":1,"index":2}'],
-    message: (d) => `${CATALOG[d.section.type as SectionType].ko} 추가됨 (${d.section.id})`,
-    handler: (p) => {
+    "section.add": withStore((store, p) => {
       if (!isSectionType(p.type))
         return err("INVALID_TYPE", `unknown section type: '${String(p.type)}' — one of ${SECTION_TYPES.join(", ")}`);
       const vs = CATALOG[p.type].variants;
@@ -123,241 +99,158 @@ export function registerCommands(ctx: AppCtx, store: StudioStore): void {
       if (!Number.isInteger(variant) || variant < 0 || variant >= vs.length)
         return err("INVALID_VARIANT", `variant out of range: ${String(p.variant)} (0..${vs.length - 1})`);
       const index = p.index == null ? null : Number(p.index);
-      return { ok: true, section: compactSection(store.sectionAdd(p.type, variant, index)) };
-    },
-  });
+      const section = compactSection(store.sectionAdd(p.type, variant, index));
+      return ok(`${CATALOG[p.type].ko} 추가됨 (${section.id})`, { section });
+    }),
 
-  reg("section.list", {
-    description: "현재 페이지의 섹션 목록(순서대로)",
-    message: (d) => `섹션 ${d.sections.length}개`,
-    handler: () => ({ ok: true, sections: store.get().stack.map(compactSection) }),
-  });
+    "section.list": withStore((store) => {
+      const sections = store.get().stack.map(compactSection);
+      return ok(`섹션 ${sections.length}개`, { sections });
+    }),
 
-  reg("section.update", {
-    description: "섹션 필드 수정 — title/sub/badge/btn1/btn2/copy/code/bg/vis/padY/padX/padYM/padXM",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      patch: { type: "json", description: "수정할 필드 객체", required: true },
-    },
-    examples: ['section.update {"id":"s1","patch":{"title":"새 제목"}}', 'section.update {"id":"s2","patch":{"bg":"#0f172a"}}'],
-    message: () => "섹션 수정됨",
-    handler: (p) => {
+    "section.update": withStore((store, p) => {
       const patch = p.patch;
-      if (patch == null || typeof patch !== "object" || Array.isArray(patch))
-        return err("INVALID_PATCH", "patch must be an object");
-      const allowed = ["title", "sub", "badge", "btn1", "btn2", "copy", "code", "bg", "vis", "padY", "padX", "padYM", "padXM"];
+      if (patch == null || typeof patch !== "object" || Array.isArray(patch)) return err("INVALID_PATCH", "patch must be an object");
+      const allowed = ["title", "sub", "badge", "btn1", "btn2", "copy", "code", "bg", "vis", "padY", "padX", "padYM", "padXM", "images"];
       const bad = Object.keys(patch).filter((k) => !allowed.includes(k));
       if (bad.length) return err("INVALID_PATCH", `unknown fields: ${bad.join(", ")} — allowed: ${allowed.join(", ")}`);
-      const ok = store.sectionUpdate(String(p.id ?? ""), patch as Record<string, unknown>);
-      return ok ? { ok: true } : err("NOT_FOUND", `section not found: '${String(p.id)}'`);
-    },
-  });
+      return store.sectionUpdate(String(p.id ?? ""), patch as Record<string, unknown>, typeof p.label === "string" ? p.label : undefined)
+        ? ok("섹션 수정됨")
+        : err("NOT_FOUND", `section not found: '${String(p.id)}'`);
+    }),
 
-  reg("section.remove", {
-    description: "섹션 삭제",
-    params: { id: { type: "string", description: "섹션 id", required: true } },
-    danger: "destructive",
-    message: () => "섹션 삭제됨",
-    handler: (p) =>
-      store.sectionRemove(String(p.id ?? "")) ? { ok: true } : err("NOT_FOUND", `section not found: '${String(p.id)}'`),
-  });
+    "section.remove": withStore((store, p) =>
+      store.sectionRemove(String(p.id ?? "")) ? ok("섹션 삭제됨") : err("NOT_FOUND", `section not found: '${String(p.id)}'`),
+    ),
 
-  reg("section.move", {
-    description: "섹션을 지정 인덱스로 이동",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      index: { type: "number", description: "목표 인덱스", required: true },
-    },
-    message: () => "섹션 이동됨",
-    handler: (p) =>
+    "section.move": withStore((store, p) =>
       store.sectionMove(String(p.id ?? ""), Number(p.index))
-        ? { ok: true, sections: store.get().stack.map(compactSection) }
+        ? ok("섹션 이동됨", { sections: store.get().stack.map(compactSection) })
         : err("NOT_FOUND", `section not found: '${String(p.id)}'`),
-  });
+    ),
 
-  reg("section.swap", {
-    description: "섹션 변형 교체 — variant 생략 시 다음 변형으로 순환",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      variant: { type: "number", description: "변형 인덱스(생략 시 순환)" },
-    },
-    message: (d) => `변형: ${d.section.variantLabel}`,
-    handler: (p) => {
+    "section.swap": withStore((store, p) => {
       const sec = store.sectionSwap(String(p.id ?? ""), p.variant == null ? undefined : Number(p.variant));
-      return sec ? { ok: true, section: compactSection(sec) } : err("NOT_FOUND", `section not found: '${String(p.id)}'`);
-    },
-  });
+      if (!sec) return err("NOT_FOUND", `section not found: '${String(p.id)}'`);
+      const section = compactSection(sec);
+      return ok(`변형: ${section.variantLabel}`, { section });
+    }),
 
-  reg("part.add", {
-    description: "섹션 내부 리스트 항목 추가(links/cards/plans/faqs/fields/cols)",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      list: { type: "string", description: "리스트 키", required: true, enum: PART_KEYS },
-    },
-    message: () => "항목 추가됨",
-    handler: (p) => {
+    "part.add": withStore((store, p) => {
       if (!PART_KEYS.includes(p.list as PartListKey)) return err("INVALID_LIST", `list must be one of ${PART_KEYS.join(", ")}`);
       return store.partAdd(String(p.id ?? ""), p.list as PartListKey)
-        ? { ok: true }
+        ? ok("항목 추가됨")
         : err("NOT_FOUND", `section not found: '${String(p.id)}'`);
-    },
-  });
+    }),
 
-  reg("part.update", {
-    description: "섹션 내부 리스트 항목 수정 — plans:{tier,price,d,btn,featured} cards:{t,d} links/faqs:{t} fields:{t,tall} cols:{h,items}",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      list: { type: "string", description: "리스트 키", required: true, enum: PART_KEYS },
-      index: { type: "number", description: "항목 인덱스(0부터)", required: true },
-      patch: { type: "json", description: "수정할 필드 객체", required: true },
-    },
-    examples: ['part.update {"id":"s3","list":"plans","index":1,"patch":{"price":"₩29,000"}}'],
-    message: () => "항목 수정됨",
-    handler: (p) => {
+    "part.update": withStore((store, p) => {
       if (!PART_KEYS.includes(p.list as PartListKey)) return err("INVALID_LIST", `list must be one of ${PART_KEYS.join(", ")}`);
-      if (p.patch == null || typeof p.patch !== "object" || Array.isArray(p.patch))
-        return err("INVALID_PATCH", "patch must be an object");
-      return store.partUpdate(String(p.id ?? ""), p.list as PartListKey, Number(p.index), p.patch as Record<string, unknown>)
-        ? { ok: true }
+      if (p.patch == null || typeof p.patch !== "object" || Array.isArray(p.patch)) return err("INVALID_PATCH", "patch must be an object");
+      return store.partUpdate(String(p.id ?? ""), p.list as PartListKey, Number(p.index), p.patch as Record<string, unknown>, typeof p.label === "string" ? p.label : undefined)
+        ? ok("항목 수정됨")
         : err("NOT_FOUND", `section or item not found: '${String(p.id)}'[${String(p.index)}]`);
-    },
-  });
+    }),
 
-  reg("part.remove", {
-    description: "섹션 내부 리스트 항목 삭제",
-    params: {
-      id: { type: "string", description: "섹션 id", required: true },
-      list: { type: "string", description: "리스트 키", required: true, enum: PART_KEYS },
-      index: { type: "number", description: "항목 인덱스(0부터)", required: true },
-    },
-    danger: "destructive",
-    message: () => "항목 삭제됨",
-    handler: (p) => {
+    "part.remove": withStore((store, p) => {
       if (!PART_KEYS.includes(p.list as PartListKey)) return err("INVALID_LIST", `list must be one of ${PART_KEYS.join(", ")}`);
       return store.partRemove(String(p.id ?? ""), p.list as PartListKey, Number(p.index))
-        ? { ok: true }
+        ? ok("항목 삭제됨")
         : err("NOT_FOUND", `section or item not found: '${String(p.id)}'[${String(p.index)}]`);
-    },
-  });
-
-  reg("template.list", {
-    description: "템플릿 목록(레시피·섹션 수)",
-    message: (d) => `템플릿 ${d.templates.length}종`,
-    handler: () => ({
-      ok: true,
-      templates: TEMPLATES.map((t) => ({ name: t.name, recipe: t.recipe, count: t.spec.length })),
     }),
-  });
 
-  reg("template.apply", {
-    description: "템플릿 적용 — 현재 페이지 스택을 교체(히스토리에 남아 undo 가능)",
-    params: { name: { type: "string", description: "템플릿 이름", required: true, enum: TEMPLATES.map((t) => t.name) } },
-    message: (d) => `템플릿 ${d.name} 적용됨`,
-    handler: (p) => {
+    "part.move": withStore((store, p) => {
+      if (!PART_KEYS.includes(p.list as PartListKey)) return err("INVALID_LIST", `list must be one of ${PART_KEYS.join(", ")}`);
+      return store.partMove(String(p.id ?? ""), p.list as PartListKey, Number(p.from), Number(p.to))
+        ? ok("항목 이동됨")
+        : err("OUT_OF_RANGE", `cannot move: '${String(p.id)}' ${String(p.from)}→${String(p.to)}`);
+    }),
+
+    "template.list": withStore(() =>
+      ok(`템플릿 ${TEMPLATES.length}종`, {
+        templates: TEMPLATES.map((t) => ({ name: t.name, recipe: t.recipe, count: t.spec.length })),
+      }),
+    ),
+
+    "template.apply": withStore((store, p) => {
       const name = String(p.name ?? "");
       return store.templateApply(name)
-        ? { ok: true, name, sections: store.get().stack.map(compactSection) }
+        ? ok(`템플릿 ${name} 적용됨`, { name, sections: store.get().stack.map(compactSection) })
         : err("NOT_FOUND", `template not found: '${name}' — one of ${TEMPLATES.map((t) => t.name).join(", ")}`);
-    },
-  });
+    }),
 
-  reg("ai", {
-    description: "자연어 지시 실행 — 추가/삭제/교체/어둡게/템플릿 ○○ 적용",
-    params: { instruction: { type: "string", description: "지시문", required: true } },
-    examples: ['ai {"instruction":"히어로 추가"}', 'ai {"instruction":"템플릿 SaaS Pricing 적용"}'],
-    message: (d) => d.message,
-    handler: (p) => {
-      const r = store.runAi(String(p.instruction ?? ""));
-      return { ok: true, action: r.action, message: r.message, sections: store.get().stack.map(compactSection) };
-    },
-  });
+    ai: withStore((store, p) => {
+      const r = store.runAi(String(p.instruction ?? ""), typeof p.selectedId === "string" ? p.selectedId : undefined);
+      return ok(r.message, { action: r.action, sections: store.get().stack.map(compactSection) });
+    }),
 
-  reg("undo", {
-    description: "실행취소",
-    message: (d) => d.statusMsg,
-    handler: () => {
-      const ok = store.undo();
+    undo: withStore((store) => {
+      if (!store.undo()) return err("AT_OLDEST", "이미 가장 오래된 버전입니다");
       const s = store.get();
-      return ok
-        ? { ok: true, statusMsg: s.statusMsg, historyIdx: s.historyIdx }
-        : err("AT_OLDEST", "이미 가장 오래된 버전입니다");
-    },
-  });
+      return ok(s.statusMsg, { historyIdx: s.historyIdx });
+    }),
 
-  reg("redo", {
-    description: "다시실행",
-    message: (d) => d.statusMsg,
-    handler: () => {
-      const ok = store.redo();
+    redo: withStore((store) => {
+      if (!store.redo()) return err("AT_NEWEST", "이미 최신 버전입니다");
       const s = store.get();
-      return ok
-        ? { ok: true, statusMsg: s.statusMsg, historyIdx: s.historyIdx }
-        : err("AT_NEWEST", "이미 최신 버전입니다");
-    },
-  });
+      return ok(s.statusMsg, { historyIdx: s.historyIdx });
+    }),
 
-  reg("history.list", {
-    description: "버전 히스토리(현재 버전 표시)",
-    message: (d) => `버전 ${d.history.length}개`,
-    handler: () => ({ ok: true, history: store.historyList() }),
-  });
+    "history.list": withStore((store) => {
+      const history = store.historyList();
+      return ok(`버전 ${history.length}개`, { history });
+    }),
 
-  reg("history.restore", {
-    description: "지정 버전으로 복원",
-    params: { version: { type: "number", description: "버전 번호(history.list 의 version)", required: true } },
-    message: (d) => `v${d.version} 복원됨`,
-    handler: (p) => {
+    "history.restore": withStore((store, p) => {
       const version = Number(p.version);
-      return store.historyRestore(version)
-        ? { ok: true, version }
-        : err("NOT_FOUND", `version not found: ${String(p.version)}`);
-    },
-  });
+      return store.historyRestore(version) ? ok(`v${version} 복원됨`, { version }) : err("NOT_FOUND", `version not found: ${String(p.version)}`);
+    }),
 
-  reg("device.set", {
-    description: "미리보기 기기 전환",
-    params: { device: { type: "string", description: "desktop | mobile", required: true, enum: ["desktop", "mobile"] } },
-    message: (d) => (d.device === "mobile" ? "Mobile 미리보기" : "Desktop 미리보기"),
-    handler: (p) => {
+    "device.set": withStore((store, p) => {
       if (p.device !== "desktop" && p.device !== "mobile") return err("INVALID_DEVICE", "device must be desktop|mobile");
       store.setDevice(p.device);
-      return { ok: true, device: p.device };
-    },
-  });
+      return ok(p.device === "mobile" ? "Mobile 미리보기" : "Desktop 미리보기", { device: p.device });
+    }),
 
-  reg("dark.set", {
-    description: "페이지 다크 모드 on/off",
-    params: { on: { type: "boolean", description: "true=다크", required: true } },
-    message: (d) => "다크 모드: " + (d.on ? "ON" : "OFF"),
-    handler: (p) => {
-      store.setDark(p.on === true || p.on === "true");
-      return { ok: true, on: store.get().pageDark };
-    },
-  });
+    "dark.set": withStore((store, p) => {
+      const on = p.on === true || p.on === "true";
+      store.setDark(on);
+      return ok("다크 모드: " + (on ? "ON" : "OFF"), { on });
+    }),
 
-  reg("layout.set", {
-    description: "페이지 레이아웃 — stack | left | right | both",
-    params: {
-      layout: { type: "string", description: "레이아웃", required: true, enum: ["stack", "left", "right", "both"] },
-    },
-    message: (d) => "레이아웃: " + d.layout,
-    handler: (p) => {
+    "layout.set": withStore((store, p) => {
       if (p.layout !== "stack" && p.layout !== "left" && p.layout !== "right" && p.layout !== "both")
         return err("INVALID_LAYOUT", "layout must be stack|left|right|both");
       store.setLayout(p.layout);
-      return { ok: true, layout: p.layout };
-    },
-  });
+      return ok("레이아웃: " + p.layout, { layout: p.layout });
+    }),
 
-  reg("accent.set", {
-    description: "액센트 컬러(#rrggbb) — 기본 팔레트: " + ACCENT_OPTIONS.join(", "),
-    params: { color: { type: "string", description: "#rrggbb", required: true } },
-    message: (d) => "액센트 컬러: " + d.color,
-    handler: (p) => {
+    "accent.set": withStore((store, p) => {
       const color = String(p.color ?? "");
-      if (!/^#[0-9a-fA-F]{6}$/.test(color)) return err("INVALID_COLOR", "color must be #rrggbb");
+      if (!/^#[0-9a-fA-F]{6}$/.test(color))
+        return err("INVALID_COLOR", `color must be #rrggbb — 기본 팔레트: ${ACCENT_OPTIONS.join(", ")}`);
       store.setAccent(color);
-      return { ok: true, color };
-    },
-  });
+      return ok("액센트 컬러: " + color, { color });
+    }),
+
+    "shell.set": withStore((store, p) => {
+      const patch: Parameters<StudioStore["setShell"]>[0] = {};
+      if (typeof p.brand === "string" && p.brand.trim()) patch.shellBrand = p.brand.trim();
+      if (p.logoMode === "text" || p.logoMode === "icon" || p.logoMode === "both") patch.logoMode = p.logoMode;
+      if (p.logoIcon != null && Number.isInteger(Number(p.logoIcon))) patch.logoIcon = Math.max(0, Math.min(3, Number(p.logoIcon)));
+      if (Array.isArray(p.sideNav)) patch.sideNav = (p.sideNav as unknown[]).map((x) => String(x));
+      if (Object.keys(patch).length === 0)
+        return err("INVALID_PARAMS", "one of brand|logoMode(text|icon|both)|logoIcon(0..3)|sideNav[] required");
+      store.setShell(patch);
+      return ok("셸 설정 변경됨", { ...patch });
+    }),
+
+    "flags.set": withStore((store, p) => {
+      const patch: Parameters<StudioStore["setUiFlags"]>[0] = {};
+      if (typeof p.sideFixed === "boolean") patch.sideFixed = p.sideFixed;
+      if (typeof p.mobBarFixed === "boolean") patch.mobBarFixed = p.mobBarFixed;
+      if (Object.keys(patch).length === 0) return err("INVALID_PARAMS", "one of sideFixed|mobBarFixed(boolean) required");
+      store.setUiFlags(patch);
+      return ok(store.get().statusMsg, { ...patch });
+    }),
+  };
 }

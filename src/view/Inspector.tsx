@@ -2,7 +2,7 @@
 // 표시 기기·여백·변형) / 부분 편집(플랜·카드·컬럼·텍스트). 입력은 라이브 반영 + blur 커밋.
 import { useRef, type CSSProperties } from "react";
 import type { PartListKey, Section } from "@/types";
-import type { StudioStore, StudioState } from "@/store";
+import type { StudioFacade, StudioState } from "@/store";
 import { PART_LABELS } from "@/store";
 import { CATALOG, padDefaults, updateById, updatePartById } from "@/core/model";
 import { FONT_MONO, FONT_SANS } from "@/styles";
@@ -36,21 +36,24 @@ function Field(props: {
   rows?: number;
   mono?: boolean;
   onLive: (v: string) => void;
-  onCommit: () => void;
+  /** blur 시 최종값으로 1회 확정(명령 1회 = 히스토리 1칸). */
+  onCommit: (v: string) => void;
 }) {
   const dirty = useRef(false);
+  const last = useRef(props.value);
   const common = {
     key: props.k,
     defaultValue: props.value,
     spellCheck: false,
     onChange: (e: { target: { value: string } }) => {
       dirty.current = true;
+      last.current = e.target.value;
       props.onLive(e.target.value);
     },
     onBlur: () => {
       if (dirty.current) {
         dirty.current = false;
-        props.onCommit();
+        props.onCommit(last.current);
       }
     },
   };
@@ -83,7 +86,7 @@ export function InspectorRail({ onExpand }: { onExpand: () => void }) {
   );
 }
 
-export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioStore; V: ViewApi }) {
+export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioFacade; V: ViewApi }) {
   const accent = S.accent;
   const isMobile = S.device === "mobile";
   const sel = S.stack.find((s) => s.id === V.selectedId) ?? null;
@@ -223,10 +226,10 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
 
         {partKind === "plans" ? (
           <>
-            {fieldCol("플랜 이름", <Field k={fk("tier")} value={String(partSel.tier ?? "")} onLive={(v) => livePart({ tier: v })} onCommit={() => store.commitLive("플랜 이름 수정")} />)}
-            {fieldCol("가격", <Field k={fk("price")} value={String(partSel.price ?? "")} onLive={(v) => livePart({ price: v })} onCommit={() => store.commitLive("가격 수정")} />)}
-            {fieldCol("설명", <Field k={fk("d")} value={String(partSel.d ?? "")} textarea rows={2} onLive={(v) => livePart({ d: v })} onCommit={() => store.commitLive("설명 수정")} />)}
-            {fieldCol("버튼 텍스트", <Field k={fk("btn")} value={String(partSel.btn ?? "")} onLive={(v) => livePart({ btn: v })} onCommit={() => store.commitLive("버튼 수정")} />)}
+            {fieldCol("플랜 이름", <Field k={fk("tier")} value={String(partSel.tier ?? "")} onLive={(v) => livePart({ tier: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { tier: v }, "플랜 이름 수정")} />)}
+            {fieldCol("가격", <Field k={fk("price")} value={String(partSel.price ?? "")} onLive={(v) => livePart({ price: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { price: v }, "가격 수정")} />)}
+            {fieldCol("설명", <Field k={fk("d")} value={String(partSel.d ?? "")} textarea rows={2} onLive={(v) => livePart({ d: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { d: v }, "설명 수정")} />)}
+            {fieldCol("버튼 텍스트", <Field k={fk("btn")} value={String(partSel.btn ?? "")} onLive={(v) => livePart({ btn: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { btn: v }, "버튼 수정")} />)}
             <button
               onClick={() => store.partUpdate(sel.id, "plans", k, { featured: !partSel.featured }, "추천 플랜 변경")}
               style={{ height: 30, border: `1px solid ${partSel.featured ? accent : "#dde3ea"}`, borderRadius: 8, background: partSel.featured ? "#eef2ff" : "#fff", color: partSel.featured ? accent : "#4a5568", cursor: "pointer", fontFamily: FONT_SANS, fontSize: 11.5, fontWeight: 600 }}
@@ -238,14 +241,14 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
 
         {partKind === "cards" ? (
           <>
-            {fieldCol("카드 제목", <Field k={fk("t")} value={String(partSel.t ?? "")} onLive={(v) => livePart({ t: v })} onCommit={() => store.commitLive("카드 제목 수정")} />)}
-            {fieldCol("카드 설명", <Field k={fk("d")} value={String(partSel.d ?? "")} textarea rows={3} onLive={(v) => livePart({ d: v })} onCommit={() => store.commitLive("카드 설명 수정")} />)}
+            {fieldCol("카드 제목", <Field k={fk("t")} value={String(partSel.t ?? "")} onLive={(v) => livePart({ t: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { t: v }, "카드 제목 수정")} />)}
+            {fieldCol("카드 설명", <Field k={fk("d")} value={String(partSel.d ?? "")} textarea rows={3} onLive={(v) => livePart({ d: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { d: v }, "카드 설명 수정")} />)}
           </>
         ) : null}
 
         {partKind === "cols" ? (
           <>
-            {fieldCol("컬럼 제목", <Field k={fk("h")} value={String(partSel.h ?? "")} onLive={(v) => livePart({ h: v })} onCommit={() => store.commitLive("컬럼 제목 수정")} />)}
+            {fieldCol("컬럼 제목", <Field k={fk("h")} value={String(partSel.h ?? "")} onLive={(v) => livePart({ h: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { h: v }, "컬럼 제목 수정")} />)}
             {fieldCol(
               "링크 (한 줄에 하나)",
               <Field
@@ -254,14 +257,14 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
                 textarea
                 rows={4}
                 onLive={(v) => livePart({ items: v.split("\n") })}
-                onCommit={() => store.commitLive("컬럼 링크 수정")}
+                onCommit={(v) => store.partUpdate(sel.id, partKind, k, { items: v.split("\n") }, "컬럼 링크 수정")}
               />,
             )}
           </>
         ) : null}
 
         {partKind === "faqs" || partKind === "links" || partKind === "fields" ? (
-          fieldCol("텍스트", <Field k={fk("t")} value={String(partSel.t ?? "")} onLive={(v) => livePart({ t: v })} onCommit={() => store.commitLive("텍스트 수정")} />)
+          fieldCol("텍스트", <Field k={fk("t")} value={String(partSel.t ?? "")} onLive={(v) => livePart({ t: v })} onCommit={(v) => store.partUpdate(sel.id, partKind, k, { t: v }, "텍스트 수정")} />)
         ) : null}
 
         <div style={{ display: "flex", gap: 6 }}>
@@ -269,7 +272,10 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
             className="hov-bg"
             title="위로"
             onClick={() => {
-              if (k > 0 && store.partMove(sel.id, partKind, k, k - 1)) V.pickPart(sel.id, partKind, k - 1);
+              if (k > 0) {
+                store.partMove(sel.id, partKind, k, k - 1);
+                V.pickPart(sel.id, partKind, k - 1);
+              }
             }}
             style={{ width: 34, height: 30, border: "1px solid #dde3ea", borderRadius: 8, background: "#fff", cursor: "pointer", fontSize: 12, color: "#4a5568" }}
           >
@@ -279,7 +285,10 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
             className="hov-bg"
             title="아래로"
             onClick={() => {
-              if (k < partArr.length - 1 && store.partMove(sel.id, partKind, k, k + 1)) V.pickPart(sel.id, partKind, k + 1);
+              if (k < partArr.length - 1) {
+                store.partMove(sel.id, partKind, k, k + 1);
+                V.pickPart(sel.id, partKind, k + 1);
+              }
             }}
             style={{ width: 34, height: 30, border: "1px solid #dde3ea", borderRadius: 8, background: "#fff", cursor: "pointer", fontSize: 12, color: "#4a5568" }}
           >
@@ -324,13 +333,13 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <label style={label11}>제목 텍스트</label>
-        <Field k={fk("title")} value={sel.title ?? ""} onLive={(v) => liveSec({ title: v })} onCommit={() => store.commitLive("텍스트 수정")} />
+        <Field k={fk("title")} value={sel.title ?? ""} onLive={(v) => liveSec({ title: v })} onCommit={(v) => store.sectionUpdate(sel.id, { title: v }, "텍스트 수정")} />
       </div>
 
       {sel.type === "Diagram" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={label11}>Mermaid 코드</label>
-          <Field k={fk("code")} value={sel.code ?? ""} textarea rows={7} mono onLive={(v) => liveSec({ code: v })} onCommit={() => store.commitLive("다이어그램 수정")} />
+          <Field k={fk("code")} value={sel.code ?? ""} textarea rows={7} mono onLive={(v) => liveSec({ code: v })} onCommit={(v) => store.sectionUpdate(sel.id, { code: v }, "다이어그램 수정")} />
           <div style={{ fontSize: 10, color: "#8a94a3", lineHeight: 1.5 }}>flowchart · sequenceDiagram · classDiagram 등 Mermaid 문법 지원</div>
         </div>
       ) : null}
@@ -338,26 +347,26 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
       {hasSub ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={label11}>보조 텍스트</label>
-          <Field k={fk("sub")} value={sel.sub ?? ""} textarea rows={2} onLive={(v) => liveSec({ sub: v })} onCommit={() => store.commitLive("텍스트 수정")} />
+          <Field k={fk("sub")} value={sel.sub ?? ""} textarea rows={2} onLive={(v) => liveSec({ sub: v })} onCommit={(v) => store.sectionUpdate(sel.id, { sub: v }, "텍스트 수정")} />
         </div>
       ) : null}
 
       {sel.btn1 !== undefined ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={label11}>주 버튼 텍스트</label>
-          <Field k={fk("btn1")} value={sel.btn1} onLive={(v) => liveSec({ btn1: v })} onCommit={() => store.commitLive("버튼 텍스트 수정")} />
+          <Field k={fk("btn1")} value={sel.btn1} onLive={(v) => liveSec({ btn1: v })} onCommit={(v) => store.sectionUpdate(sel.id, { btn1: v }, "버튼 텍스트 수정")} />
         </div>
       ) : null}
       {sel.btn2 !== undefined ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={label11}>보조 버튼 텍스트</label>
-          <Field k={fk("btn2")} value={sel.btn2} onLive={(v) => liveSec({ btn2: v })} onCommit={() => store.commitLive("버튼 텍스트 수정")} />
+          <Field k={fk("btn2")} value={sel.btn2} onLive={(v) => liveSec({ btn2: v })} onCommit={(v) => store.sectionUpdate(sel.id, { btn2: v }, "버튼 텍스트 수정")} />
         </div>
       ) : null}
       {sel.badge !== undefined ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={label11}>배지 텍스트</label>
-          <Field k={fk("badge")} value={sel.badge} onLive={(v) => liveSec({ badge: v })} onCommit={() => store.commitLive("배지 수정")} />
+          <Field k={fk("badge")} value={sel.badge} onLive={(v) => liveSec({ badge: v })} onCommit={(v) => store.sectionUpdate(sel.id, { badge: v }, "배지 수정")} />
         </div>
       ) : null}
 
@@ -428,7 +437,7 @@ export function InspectorBody({ S, store, V }: { S: StudioState; store: StudioSt
               step={2}
               value={value}
               onChange={(e) => liveSec(patchOf(Number(e.target.value)))}
-              onPointerUp={() => store.commitLive("여백 조정")}
+              onPointerUp={() => store.sectionUpdate(sel.id, isMobile ? { padYM: selPadY, padXM: selPadX } : { padY: selPadY, padX: selPadX }, "여백 조정")}
               style={{ flex: 1, accentColor: accent }}
             />
             <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#4a5568", width: 32, textAlign: "right", flex: "none" }}>{value}px</span>

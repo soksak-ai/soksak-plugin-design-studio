@@ -2,7 +2,7 @@
 // 뷰-로컬 상태(선택·패널·드래그)는 여기서 소유하고 ViewApi 로 하위에 내린다.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PartListKey } from "@/types";
-import type { StudioStore } from "@/store";
+import type { StudioFacade } from "@/store";
 import { moveTo } from "@/core/model";
 import { useStudio } from "@/view/useStore";
 import type { DragPayload, SelPart, ViewApi } from "@/view/common";
@@ -12,7 +12,7 @@ import { Canvas } from "@/view/Canvas";
 import { InspectorBody, InspectorRail } from "@/view/Inspector";
 import { TreePanel } from "@/view/TreePanel";
 
-export default function App({ store }: { store: StudioStore }) {
+export default function App({ store }: { store: StudioFacade }) {
   const S = useStudio(store);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,11 +63,14 @@ export default function App({ store }: { store: StudioStore }) {
       const failed = e.dataTransfer?.dropEffect === "none";
       if (dragDirty.current) {
         dragDirty.current = false;
+        const p = dragRef.current;
         if (failed && dragStartStack.current) {
           store.setStackLive(dragStartStack.current);
           store.setStatus("이동 취소 — 원래 위치로 복원");
-        } else {
-          store.commitLive("섹션 이동");
+        } else if (p?.kind === "move") {
+          // 라이브 순서는 미러에만 있다 — 최종 인덱스 한 번의 이동 명령으로 확정한다.
+          const idx = store.get().stack.findIndex((x) => x.id === p.id);
+          if (idx >= 0) store.sectionMove(p.id, idx);
         }
       }
       dragStartStack.current = null;

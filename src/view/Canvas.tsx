@@ -1,7 +1,7 @@
 // 중앙 캔버스 — 미리보기 프레임(페이지 레이아웃 사이드바·모바일 드로어 포함), 섹션 스택,
 // 빈 상태, 끝 드롭존. 프레임 폭은 기기 토글(390/960)로 애니메이션한다.
 import type { CSSProperties } from "react";
-import type { StudioStore, StudioState } from "@/store";
+import type { StudioFacade, StudioState } from "@/store";
 import { FONT_MONO } from "@/styles";
 import { Editable, stop, type ViewApi } from "@/view/common";
 import { SectionView } from "@/view/SectionView";
@@ -14,7 +14,7 @@ const LOGO_PRESETS = [
 ];
 export { LOGO_PRESETS };
 
-export function Canvas({ S, store, V }: { S: StudioState; store: StudioStore; V: ViewApi }) {
+export function Canvas({ S, store, V }: { S: StudioState; store: StudioFacade; V: ViewApi }) {
   const isMobile = S.device === "mobile";
   const accent = S.accent;
   const E = S.epoch;

@@ -2,19 +2,19 @@
 // 드래그 재정렬·인라인 편집(part ring 포함)까지 섹션 하나의 표면 전부를 소유한다.
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { CardItem, FieldItem, FootCol, PlanItem, Section, TextItem } from "@/types";
-import type { StudioStore, StudioState } from "@/store";
+import type { StudioFacade, StudioState } from "@/store";
 import { CATALOG, SECTION_TYPES, colorsFor, darkBg, padDefaults } from "@/core/model";
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import { Editable, stop, type ViewApi } from "@/view/common";
 import { ImageSlot } from "@/view/ImageSlot";
-import { Mermaid } from "@/view/Mermaid";
+import { MiniFlow } from "@/view/MiniFlow";
 
 interface Props {
   s: Section;
   /** visibleStack 내 인덱스(드롭존 활성 판정). */
   i: number;
   S: StudioState;
-  store: StudioStore;
+  store: StudioFacade;
   V: ViewApi;
 }
 
@@ -755,7 +755,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {h2Title({ textAlign: "center" })}
-          <Mermaid code={s.code ?? ""} dark={dk} />
+          <MiniFlow code={s.code ?? ""} dark={dk} />
         </div>
       );
 

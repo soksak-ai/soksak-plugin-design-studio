@@ -1,12 +1,11 @@
 {
-  "spec": "soksak-spec-plugin@1",
+  "spec": "soksak-spec-plugin@0.0.1",
   "id": "soksak-plugin-design-studio",
   "name": {
     "ko": "디자인 스튜디오",
     "en": "Design Studio"
   },
   "version": "0.0.1",
-  "repo": "https://github.com/soksak-ai/soksak-plugin-design-studio.git",
   "description": {
     "ko": "컴포넌트 조립형 페이지 빌더 — 23종 섹션 카탈로그와 변형을 쌓아 랜딩페이지를 만들고, 템플릿 부분 교체·자연어 지시·인라인 편집·인스펙터·구조 트리·버전 히스토리로 다듬는다. 헤드리스: 모든 기능이 명령이라 CLI/MCP 로 구동한다.",
     "en": "Component-composition page builder — stack 23 section kinds with variants into a landing page, then refine with template part-swaps, natural-language instructions, inline editing, an inspector, a structure tree, and version history. Headless: every capability is a command, driven from CLI/MCP."
@@ -159,6 +158,13 @@
         "danger": "destructive"
       },
       {
+        "name": "part.move",
+        "title": {
+          "ko": "섹션 내부 항목 순서를 바꿉니다",
+          "en": "Moves an item inside a section"
+        }
+      },
+      {
         "name": "template.list",
         "title": {
           "ko": "템플릿을 나열합니다",
@@ -233,6 +239,20 @@
         "title": {
           "ko": "액센트 컬러를 바꿉니다",
           "en": "Sets the accent color"
+        }
+      },
+      {
+        "name": "shell.set",
+        "title": {
+          "ko": "페이지 셸(로고·브랜드·내비)을 설정합니다",
+          "en": "Sets the page shell (logo, brand, nav)"
+        }
+      },
+      {
+        "name": "flags.set",
+        "title": {
+          "ko": "사이드바·모바일 바 고정을 설정합니다",
+          "en": "Sets sidebar and mobile bar pinning"
         }
       }
     ],

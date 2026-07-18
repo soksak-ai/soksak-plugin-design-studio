@@ -1,11 +1,11 @@
 // 상단 바 — 로고·페이지명, AI 지시 입력, Desktop/Mobile 토글, 페이지 다크, undo/redo,
 // 버전 히스토리 드롭다운, Publish(시각 전용).
 import { useState } from "react";
-import type { StudioStore, StudioState } from "@/store";
+import type { StudioFacade, StudioState } from "@/store";
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import type { ViewApi } from "@/view/common";
 
-export function TopBar({ S, store, V }: { S: StudioState; store: StudioStore; V: ViewApi }) {
+export function TopBar({ S, store, V }: { S: StudioState; store: StudioFacade; V: ViewApi }) {
   const [aiValue, setAiValue] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const accent = S.accent;
@@ -141,7 +141,7 @@ export function TopBar({ S, store, V }: { S: StudioState; store: StudioStore; V:
               >
                 <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: i === S.historyIdx ? accent : "#a8b1bd", fontWeight: 500 }}>v{i + 1}</span>
                 <span style={{ fontSize: 12, color: "#1b2430", flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.label}</span>
-                <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#a8b1bd" }}>{h.stack.length}개</span>
+                <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#a8b1bd" }}>{h.count}개</span>
               </button>
             ))}
         </div>
