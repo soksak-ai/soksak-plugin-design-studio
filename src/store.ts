@@ -1,7 +1,7 @@
-// 컨트롤러 스토어 — 문서의 단일 권위. 컨트롤러 런타임 모듈 스코프에 살고, 모든 명령 핸들러가
-// 이 스토어를 조작한다. 영속은 브로커 명령(data.kv.get/set, ns=플러그인 id) 하나의 키로 한다.
-// 뷰 런타임은 별개 문서라 이 스토어를 직접 만지지 못한다 — 자기 명령(plugin.<id>.*)으로만
-// 조작하고 view/remoteStore 미러가 상태를 당겨온다(StudioFacade 로 동형).
+// 컨트롤러 스토어 — 문서의 단일 권위. 창-realm 로더에서 컨트롤러·뷰·명령 핸들러가 같은
+// 모듈 인스턴스의 이 스토어를 공유한다. 영속은 data.kv 한 키(ns=플러그인 id, key=doc)이고,
+// kv.watch(전 창 broadcast)로 다른 창/CLI 변이를 폴링 0 으로 재수화한다(자기 쓰기는 writer
+// 스탬프로 무시). 하니스는 exec/watch 미주입으로 순수 메모리 동작한다.
 import type {
   AiAction,
   Device,
@@ -46,6 +46,9 @@ export interface CommandOutcome {
 
 /** 레지스트리 브로커 실행 함수 — 컨트롤러는 ctx.app.commands.execute, 하니스는 미주입. */
 export type ExecFn = (command: string, params?: Record<string, unknown>) => Promise<CommandOutcome>;
+
+/** kv 변경 전 창 구독(app.data.kv.watch) — 다른 창/CLI 변이를 폴링 0 으로 받는 통로. */
+export type KvWatchFn = (cb: (key: string | null) => void) => { dispose(): void } | (() => void);
 
 export interface PageRow extends PageMeta {
   count: number;
@@ -130,6 +133,11 @@ function maxSectionUid(stacks: Section[][]): number {
 
 export class StudioStore implements StudioFacade {
   private exec: ExecFn | null;
+  private watchFn: KvWatchFn | null;
+  private watchSub: { dispose(): void } | (() => void) | null = null;
+  /** 창별 쓰기 스탬프 — watch 에코에서 자기 쓰기를 걸러낸다. */
+  private writerId = crypto.randomUUID();
+  private syncChain: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private uid = 1;
   private pagesData = new Map<string, PageState>();
@@ -149,8 +157,9 @@ export class StudioStore implements StudioFacade {
   private snapshot: StudioState | null = null;
   private persistChain: Promise<void> = Promise.resolve();
 
-  constructor(opts?: { exec?: ExecFn }) {
+  constructor(opts?: { exec?: ExecFn; watch?: KvWatchFn }) {
     this.exec = opts?.exec ?? null;
+    this.watchFn = opts?.watch ?? null;
   }
 
   subscribe(cb: () => void): () => void {
@@ -211,7 +220,69 @@ export class StudioStore implements StudioFacade {
       this.seedInitial();
       this.persist();
     }
+    // 교차 창 동기화 — 이 ns 의 kv 변경(전 창 broadcast)을 구독해 다른 창/CLI 변이를 즉시
+    // 재수화한다(폴링 0). 자기 쓰기 에코는 writer 스탬프로 걸러진다.
+    if (this.watchFn) {
+      this.watchSub = this.watchFn((key) => {
+        if (key !== null && key !== DOC_KEY) return;
+        this.syncChain = this.syncChain.then(() => this.externalReload()).catch(() => undefined);
+      });
+    }
     this.notify();
+  }
+
+  /** 다른 창의 doc 쓰기를 반영 — 현재 페이지 히스토리에 쌓아 undo 로 되돌릴 수 있게 한다. */
+  private async externalReload(): Promise<void> {
+    if (!this.exec) return;
+    try {
+      const out = await this.exec("data.kv.get", { ns: PLUGIN_ID, key: DOC_KEY });
+      const value = out.ok ? (out.data?.value as Record<string, unknown> | null | undefined) : null;
+      if (!value || typeof value !== "object") return;
+      if (value.writer === this.writerId) return; // 자기 쓰기 에코
+      const pages = Array.isArray(value.pages) ? (value.pages as PageMeta[]) : [];
+      if (pages.length === 0) return;
+      const prevData = this.pagesData;
+      this.pages = pages.map((p) => ({ id: String(p.id), name: String(p.name) }));
+      const pd = (value.pagesData ?? {}) as Record<string, { stack?: Section[]; layout?: PageLayout }>;
+      this.pagesData = new Map();
+      for (const p of this.pages) {
+        const row = pd[p.id] ?? {};
+        const stack = Array.isArray(row.stack) ? row.stack : [];
+        const layout = (["stack", "left", "right", "both"] as const).includes(row.layout as PageLayout)
+          ? (row.layout as PageLayout)
+          : "stack";
+        const prev = prevData.get(p.id);
+        if (prev && JSON.stringify(prev.stack) !== JSON.stringify(stack)) {
+          const r = pushHistory(prev.history, prev.historyIdx, "외부 변경 반영", stack);
+          this.pagesData.set(p.id, { stack, layout, history: r.history, historyIdx: r.historyIdx });
+        } else if (prev) {
+          this.pagesData.set(p.id, { ...prev, stack, layout });
+        } else {
+          this.pagesData.set(p.id, { stack, layout, history: [{ label: "불러옴", stack: clone(stack) }], historyIdx: 0 });
+        }
+      }
+      const cur = typeof value.curPage === "string" ? value.curPage : this.pages[0].id;
+      this.curPage = this.pages.some((p) => p.id === cur) ? cur : this.pages[0].id;
+      this.applySettings((value.settings ?? {}) as Record<string, unknown>);
+      this.uid = Math.max(this.uid, maxSectionUid([...this.pagesData.values()].map((p) => p.stack)) + 1);
+      this.epoch += 1;
+      this.statusMsg = "외부 변경 반영";
+      this.notify();
+    } catch (e) {
+      console.error("[studio] 외부 변경 반영 실패:", e);
+    }
+  }
+
+  private applySettings(s: Record<string, unknown>): void {
+    if (typeof s.accent === "string") this.accent = s.accent;
+    if (typeof s.shellBrand === "string") this.shellBrand = s.shellBrand;
+    if (s.logoMode === "text" || s.logoMode === "icon" || s.logoMode === "both") this.logoMode = s.logoMode;
+    if (typeof s.logoIcon === "number") this.logoIcon = s.logoIcon;
+    if (Array.isArray(s.sideNav)) this.sideNav = (s.sideNav as unknown[]).map((x) => String(x));
+    if (s.device === "desktop" || s.device === "mobile") this.device = s.device;
+    if (typeof s.pageDark === "boolean") this.pageDark = s.pageDark;
+    if (typeof s.sideFixed === "boolean") this.sideFixed = s.sideFixed;
+    if (typeof s.mobBarFixed === "boolean") this.mobBarFixed = s.mobBarFixed;
   }
 
   private seedInitial(): void {
@@ -253,16 +324,7 @@ export class StudioStore implements StudioFacade {
       }
       const cur = typeof value.curPage === "string" ? value.curPage : this.pages[0].id;
       this.curPage = this.pages.some((p) => p.id === cur) ? cur : this.pages[0].id;
-      const s = (value.settings ?? {}) as Record<string, unknown>;
-      if (typeof s.accent === "string") this.accent = s.accent;
-      if (typeof s.shellBrand === "string") this.shellBrand = s.shellBrand;
-      if (s.logoMode === "text" || s.logoMode === "icon" || s.logoMode === "both") this.logoMode = s.logoMode;
-      if (typeof s.logoIcon === "number") this.logoIcon = s.logoIcon;
-      if (Array.isArray(s.sideNav)) this.sideNav = (s.sideNav as unknown[]).map((x) => String(x));
-      if (s.device === "desktop" || s.device === "mobile") this.device = s.device;
-      if (typeof s.pageDark === "boolean") this.pageDark = s.pageDark;
-      if (typeof s.sideFixed === "boolean") this.sideFixed = s.sideFixed;
-      if (typeof s.mobBarFixed === "boolean") this.mobBarFixed = s.mobBarFixed;
+      this.applySettings((value.settings ?? {}) as Record<string, unknown>);
       this.uid = maxSectionUid([...this.pagesData.values()].map((p) => p.stack)) + 1;
       this.statusMsg = "문서 불러옴";
       return true;
@@ -278,6 +340,7 @@ export class StudioStore implements StudioFacade {
     if (!exec) return;
     const doc = {
       v: 1,
+      writer: this.writerId,
       pages: this.pages,
       curPage: this.curPage,
       pagesData: Object.fromEntries(
@@ -304,6 +367,9 @@ export class StudioStore implements StudioFacade {
   }
 
   dispose(): void {
+    const sub = this.watchSub;
+    this.watchSub = null;
+    if (sub) typeof sub === "function" ? sub() : sub.dispose();
     this.listeners.clear();
   }
 

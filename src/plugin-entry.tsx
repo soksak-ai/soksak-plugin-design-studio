@@ -1,7 +1,7 @@
-// soksak 디자인 스튜디오 — 격리 런타임 엔트리(정적 모듈). 컨트롤러 런타임이 문서 권위
-// 스토어를 소유하고 commands 맵이 그것을 조작한다. 뷰 런타임은 별개 sandbox 문서라
-// RemoteStudioStore 가 자기 명령으로 동기화한다. inventory(commands/views 키)는 매니페스트와
-// exact-match(선언 ≡ 실제).
+// soksak 디자인 스튜디오 — SDK 정적 모듈 엔트리({controller, commands, views}). 컨트롤러가
+// 문서 권위 스토어를 소유하고, 같은 창-realm 모듈 인스턴스라 뷰와 명령 핸들러가 그 스토어를
+// 공유한다(라이브 뷰). 다른 창 변이는 kv.watch 재수화. inventory(commands/views 키)는
+// 매니페스트와 exact-match(선언 ≡ 실제).
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import App from "@/view/App";
@@ -11,6 +11,7 @@ import { buildCommands } from "@/commands";
 
 interface RuntimeApp {
   commands?: { execute(command: string, params?: Record<string, unknown>): Promise<CommandOutcome> };
+  data?: { kv?: { watch?(cb: (key: string | null) => void): { dispose(): void } | (() => void) } };
 }
 interface ControllerContext {
   app: RuntimeApp;
@@ -89,7 +90,8 @@ export default {
         if (!execute) return { ok: false, code: "NO_BROKER", message: "command broker unavailable" };
         return execute(command, params);
       };
-      const store = new StudioStore({ exec });
+      const watch = context.app.data?.kv?.watch?.bind(context.app.data.kv);
+      const store = new StudioStore({ exec, ...(watch ? { watch } : {}) });
       try {
         await store.init();
       } catch (e) {

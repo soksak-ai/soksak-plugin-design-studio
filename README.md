@@ -27,7 +27,10 @@ the whole document can be driven from `sok` CLI or MCP without opening the view.
   (tauri `security.freezePrototype`).
 - **Live view** — the window-realm loader runs controller and view in one module instance, so
   the open view subscribes to the authoritative store directly: every CLI/MCP mutation is
-  visible immediately, with zero polling.
+  visible immediately, with zero polling. Cross-window too: each window's store subscribes to
+  `data.kv.watch` (all-window broadcast) and rehydrates on another window's write — own-write
+  echoes are skipped by a per-window writer stamp, and the external change lands in the undo
+  history.
 
 ## Commands
 
