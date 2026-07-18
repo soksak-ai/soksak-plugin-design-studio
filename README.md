@@ -18,8 +18,16 @@ the whole document can be driven from `sok` CLI or MCP without opening the view.
   current page stack (undoable).
 - **Natural-language instruction** (`ai`) — add / remove / swap / darken / apply template,
   e.g. `히어로 추가`, `가격표 삭제`, `배경 어둡게`, `템플릿 SaaS Pricing 적용`.
-- **Persistence** — pages and settings live in `app.data` collections (`pages`, `settings`);
-  cross-window changes rehydrate via `data.watch`. Undo history is per-window session state.
+- **Persistence** — the whole document (pages, stacks, settings) lives in one `data.kv` row
+  (`ns=soksak-plugin-design-studio`, `key=doc`), written on every commit and hydrated at
+  activation. Undo history is per-window session state.
+- **Diagrams** — the Diagram section renders real Mermaid, bundled and lazy-evaluated at the
+  first render. The build rewrites third-party prototype shadow-assignments (`X.valueOf = …`)
+  into own-property defines so the bundle survives the host's frozen `Object.prototype`
+  (tauri `security.freezePrototype`).
+- **Live view** — the window-realm loader runs controller and view in one module instance, so
+  the open view subscribes to the authoritative store directly: every CLI/MCP mutation is
+  visible immediately, with zero polling.
 
 ## Commands
 
@@ -35,8 +43,8 @@ sok plugin.soksak-plugin-design-studio.undo
 ```
 
 Full list: `ping`, `state`, `reset`, `page.add/list/open`, `section.add/list/update/remove/
-move/swap`, `part.add/update/remove`, `template.list/apply`, `ai`, `undo`, `redo`,
-`history.list/restore`, `device.set`, `dark.set`, `layout.set`, `accent.set`.
+move/swap`, `part.add/update/remove/move`, `template.list/apply`, `ai`, `undo`, `redo`,
+`history.list/restore`, `device.set`, `dark.set`, `layout.set`, `accent.set`, `shell.set`, `flags.set`.
 
 ## Development
 

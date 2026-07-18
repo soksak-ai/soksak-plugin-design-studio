@@ -17,8 +17,13 @@ soksak 컴포넌트 조립형 페이지 빌더. 23종 섹션 카탈로그를 쌓
   교체한다(undo 가능).
 - **자연어 지시**(`ai`) — 추가/삭제/교체/어둡게/템플릿 적용. 예: `히어로 추가`,
   `가격표 삭제`, `배경 어둡게`, `템플릿 SaaS Pricing 적용`.
-- **영속** — 페이지·설정은 `app.data` 컬렉션(`pages`, `settings`)에 저장하고 다른 창의
-  변경은 `data.watch` 로 재수화한다. undo 히스토리는 창 세션 상태다.
+- **영속** — 문서 전체(페이지·스택·설정)를 `data.kv` 한 행(`ns=soksak-plugin-design-studio`,
+  `key=doc`)에 커밋마다 기록하고 활성화 시 수화한다. undo 히스토리는 창 세션 상태다.
+- **다이어그램** — Diagram 섹션은 진짜 Mermaid 를 번들해 첫 렌더에서 지연 평가한다. 빌드가
+  서드파티의 프로토타입 섀도잉 할당(`X.valueOf = …`)을 own 프로퍼티 define 으로 재작성해
+  호스트의 동결 `Object.prototype`(tauri `security.freezePrototype`) 아래에서도 동작한다.
+- **라이브 뷰** — 창-realm 로더는 컨트롤러와 뷰를 한 모듈 인스턴스로 돌리므로, 열린 뷰는
+  권위 스토어를 직접 구독한다: CLI/MCP 변이가 폴링 0 으로 즉시 화면에 반영된다.
 
 ## 명령
 
@@ -34,8 +39,8 @@ sok plugin.soksak-plugin-design-studio.undo
 ```
 
 전체: `ping`, `state`, `reset`, `page.add/list/open`, `section.add/list/update/remove/move/
-swap`, `part.add/update/remove`, `template.list/apply`, `ai`, `undo`, `redo`,
-`history.list/restore`, `device.set`, `dark.set`, `layout.set`, `accent.set`.
+swap`, `part.add/update/remove/move`, `template.list/apply`, `ai`, `undo`, `redo`,
+`history.list/restore`, `device.set`, `dark.set`, `layout.set`, `accent.set`, `shell.set`, `flags.set`.
 
 ## 개발
 
