@@ -165,10 +165,10 @@ export function TreePanel(props: {
                 label: "Column",
                 sub: '"' + c2.h + '"',
                 key: s.id + "/col" + ci,
-                sel: () => V.selectItem(s.id, "cols" as never, ci),
+                sel: () => V.selectItem(s.id, "cols", ci),
                 isSel: itemSel("cols", ci),
                 kids: [
-                  { label: "Heading", sub: '"' + c2.h + '"', sel: () => V.selectItem(s.id, "cols" as never, ci) },
+                  { label: "Heading", sub: '"' + c2.h + '"', sel: () => V.selectItem(s.id, "cols", ci) },
                   ...(c2.items ?? []).map(
                     (t, ii): TreeNode => ({
                       label: "Link",
