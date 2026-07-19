@@ -2,6 +2,7 @@
 // 저장은 소유 섹션의 images[slotKey](dataURL) — 스토어 커밋 경로로만 변이한다.
 import { useState, type DragEvent } from "react";
 import { FONT_MONO } from "@/styles";
+import { useExportMode } from "@/view/common";
 
 export function ImageSlot(props: {
   src?: string;
@@ -13,7 +14,28 @@ export function ImageSlot(props: {
   onImage: (dataURL: string) => void;
 }) {
   const [over, setOver] = useState(false);
+  const exportMode = useExportMode();
   const rad = props.radius ?? 0;
+  if (exportMode) {
+    if (props.src)
+      return (
+        <div style={{ width: "100%", height: "100%", borderRadius: rad, overflow: "hidden" }}>
+          <img src={props.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+      );
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: rad,
+          background: props.dark
+            ? "repeating-linear-gradient(45deg,#1b2740,#1b2740 8px,#22304f 8px,#22304f 16px)"
+            : "repeating-linear-gradient(45deg,#e7ecf1,#e7ecf1 8px,#eff3f7 8px,#eff3f7 16px)",
+        }}
+      />
+    );
+  }
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();

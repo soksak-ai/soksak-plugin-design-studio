@@ -29,6 +29,10 @@ the whole document can be driven from `sok` CLI or MCP without opening the view.
   panels, library tab, search, tree folds) rides the host restore seam (`restore.state` /
   `setRestoreState`), so a restored tab comes back exactly as left. A restored selection whose
   section no longer exists is dropped, never resurrected.
+- **Publish** — the `publish` command (and the top-bar button) renders the current page to a
+  standalone HTML file: same section markup source as the editor (export mode strips editor
+  affordances), shell layout, dark palette, embedded Mermaid SVG, and `vis` device rules as
+  media queries. Default path is `<project root>/<page>.html`.
 - **Driveable end-to-end** — every surface is reachable without a mouse: `ui.input.fill`
   commits inline contenteditable edits, `ui.input.dnd` drives section reorder, library
   drag-placement onto exposed drop zones (`dz/*`), and image-file drops onto exposed slots

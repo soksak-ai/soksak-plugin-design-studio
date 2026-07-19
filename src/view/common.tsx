@@ -1,6 +1,11 @@
 // 뷰 공통 — 선택·드래그 상태 타입과 contentEditable 인라인 편집 요소.
-import { createElement, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { createContext, createElement, useContext, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import type { PartListKey, SectionType } from "@/types";
+
+/** 발행 렌더 모드 — 값이 있으면 에디터 표면(contenteditable·data-node·드래그·드롭존)을 벗기고
+ *  순수 페이지 마크업만 낸다. mermaidSvg 는 사전 렌더된 다이어그램(SVG) 캐시(키: "l|"|"d|"+code). */
+export const ExportContext = createContext<null | { mermaidSvg: Record<string, string> }>(null);
+export const useExportMode = () => useContext(ExportContext);
 
 export interface SelPart {
   listKey: PartListKey;
@@ -55,6 +60,13 @@ export function Editable(props: {
   onCommit: (v: string) => void;
   onClick?: (e: MouseEvent) => void;
 }): ReactNode {
+  const exportMode = useExportMode();
+  if (exportMode) {
+    // 발행 — 편집 어포던스 없는 순수 텍스트 요소(스타일 동일, cursor·링 제거).
+    const { cursor: _cursor, boxShadow: _ring, ...style } = props.style;
+    void _cursor; void _ring;
+    return createElement(props.tag ?? "span", { className: props.className, style }, props.text);
+  }
   return createElement(
     props.tag ?? "span",
     {

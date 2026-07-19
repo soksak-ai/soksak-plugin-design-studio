@@ -5,7 +5,7 @@ import type { StudioFacade, StudioState } from "@/store";
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import type { ViewApi } from "@/view/common";
 
-export function TopBar({ S, store, V }: { S: StudioState; store: StudioFacade; V: ViewApi }) {
+export function TopBar({ S, store, V, onPublish }: { S: StudioState; store: StudioFacade; V: ViewApi; onPublish?: () => void }) {
   const [aiValue, setAiValue] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const accent = S.accent;
@@ -116,6 +116,8 @@ export function TopBar({ S, store, V }: { S: StudioState; store: StudioFacade; V
           v{S.historyIdx + 1}
         </button>
         <button
+          data-node="publish"
+          onClick={onPublish}
           style={{ height: 30, padding: "0 16px", border: "none", borderRadius: 8, background: "#1b2430", color: "#fff", cursor: "pointer", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600 }}
         >
           Publish

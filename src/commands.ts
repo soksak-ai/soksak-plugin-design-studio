@@ -4,6 +4,14 @@
 import type { PartListKey, SectionType } from "@/types";
 import { CATALOG, SECTION_TYPES, TEMPLATES } from "@/core/model";
 import { ACCENT_OPTIONS, isSectionType, type CommandOutcome, type StudioStore } from "@/store";
+import { collectDiagrams, renderPageHtml } from "@/view/exportHtml";
+import { renderMermaid } from "@/view/Mermaid";
+
+/** 발행 IO — 호스트 표면(fs:write·프로젝트 루트)은 activate 에서 늦게 배선된다. */
+export interface PublishIo {
+  writeText?: (path: string, content: string) => Promise<void>;
+  projectRoot?: () => string | null;
+}
 
 type Handler = (params: Record<string, unknown>) => Promise<CommandOutcome>;
 
@@ -53,7 +61,7 @@ function fullState(store: StudioStore): Record<string, unknown> {
   };
 }
 
-export function buildCommands(storeReady: () => Promise<StudioStore>): Record<string, Handler> {
+export function buildCommands(storeReady: () => Promise<StudioStore>, getIo: () => PublishIo = () => ({})): Record<string, Handler> {
   const withStore =
     (fn: (store: StudioStore, params: Record<string, unknown>) => CommandOutcome): Handler =>
     async (params) => {
@@ -245,6 +253,44 @@ export function buildCommands(storeReady: () => Promise<StudioStore>): Record<st
       store.setShell(patch);
       return ok("셸 설정 변경됨", { ...patch });
     }),
+
+    publish: async (params) => {
+      const store = await storeReady();
+      try {
+        const s = store.get();
+        const diagrams = collectDiagrams(s.stack, s.pageDark);
+        const mermaidSvg: Record<string, string> = {};
+        for (const d of diagrams) mermaidSvg[d.key] = await renderMermaid(d.code, d.dark);
+        const pageName = s.pages.find((pg) => pg.active)?.name ?? "page";
+        const html = renderPageHtml({
+          pageName,
+          stack: s.stack,
+          layout: s.layout,
+          pageDark: s.pageDark,
+          accent: s.accent,
+          shellBrand: s.shellBrand,
+          logoMode: s.logoMode,
+          logoIcon: s.logoIcon,
+          sideNav: s.sideNav,
+          mermaidSvg,
+        });
+        const io = getIo();
+        const root = io.projectRoot?.() ?? null;
+        const path =
+          params.path != null && String(params.path).trim() !== ""
+            ? String(params.path)
+            : root
+              ? root + "/" + pageName + ".html"
+              : null;
+        if (!path) return err("NO_PATH", "발행 경로가 없습니다 — path 를 지정하세요(활성 프로젝트 루트 없음)");
+        if (!io.writeText) return err("NO_FS", "fs:write 표면이 없습니다(권한 미부여)");
+        await io.writeText(path, html);
+        store.setStatus("발행됨: " + path);
+        return ok("발행됨: " + path, { path, bytes: html.length, sections: s.stack.length });
+      } catch (e) {
+        return err("INTERNAL", e instanceof Error ? e.message : String(e));
+      }
+    },
 
     "flags.set": withStore((store, p) => {
       const patch: Parameters<StudioStore["setUiFlags"]>[0] = {};

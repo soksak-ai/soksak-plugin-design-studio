@@ -7,11 +7,14 @@ import { createRoot, type Root } from "react-dom/client";
 import App from "@/view/App";
 import { GLOBAL_CSS } from "@/styles";
 import { StudioStore, type CommandOutcome, type ExecFn, type StudioFacade } from "@/store";
-import { buildCommands } from "@/commands";
+import { buildCommands, type PublishIo } from "@/commands";
+import { PLUGIN_ID } from "@/store";
 
 interface RuntimeApp {
   commands?: { execute(command: string, params?: Record<string, unknown>): Promise<CommandOutcome> };
   data?: { kv?: { watch?(cb: (key: string | null) => void): { dispose(): void } | (() => void) } };
+  fs?: { writeText?(path: string, content: string): Promise<void> };
+  project?: { current?(): { id: string; root: string | null } | null };
 }
 interface ControllerContext {
   app: RuntimeApp;
@@ -47,6 +50,9 @@ class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null
   }
 }
 
+// 발행 IO — activate 에서 호스트 표면으로 채워진다(정적 commands 맵은 지연 접근).
+let publishIo: PublishIo = {};
+
 // 컨트롤러 스토어 — activate 완료 전에 도착한 명령은 준비를 기다린다.
 let resolveStore: (store: StudioStore) => void;
 const storePromise = new Promise<StudioStore>((resolve) => {
@@ -59,7 +65,7 @@ const mounts = new WeakMap<HTMLElement, Root>();
 function mountApp(
   container: HTMLElement,
   store: StudioFacade,
-  view?: { restore?: unknown; onViewState?: (state: unknown) => void },
+  view?: { restore?: unknown; onViewState?: (state: unknown) => void; onPublish?: () => void },
 ) {
   unmountApp(container);
   container.style.position = "relative";
@@ -77,7 +83,7 @@ function mountApp(
   const root = createRoot(host);
   root.render(
     <ErrBoundary>
-      <App store={store} restore={view?.restore} onViewState={view?.onViewState} />
+      <App store={store} restore={view?.restore} onViewState={view?.onViewState} onPublish={view?.onPublish} />
     </ErrBoundary>,
   );
   mounts.set(container, root);
@@ -99,6 +105,12 @@ export default {
         return execute(command, params);
       };
       const watch = context.app.data?.kv?.watch?.bind(context.app.data.kv);
+      const fsWrite = context.app.fs?.writeText?.bind(context.app.fs);
+      const project = context.app.project;
+      publishIo = {
+        ...(fsWrite ? { writeText: fsWrite } : {}),
+        projectRoot: () => project?.current?.()?.root ?? null,
+      };
       const store = new StudioStore({ exec, ...(watch ? { watch } : {}) });
       try {
         await store.init();
@@ -109,7 +121,7 @@ export default {
     },
   },
 
-  commands: buildCommands(() => storePromise),
+  commands: buildCommands(() => storePromise, () => publishIo),
 
   views: {
     studio: {
@@ -118,9 +130,11 @@ export default {
           // 창-realm 로더: 컨트롤러와 뷰가 같은 모듈 인스턴스 — 컨트롤러 스토어(단일 권위)를
           // 직접 구독한다. CLI/MCP 명령의 변이가 즉시 뷰에 반영된다(폴링 0, 원격 미러 불요).
           const store = await storePromise;
+          const execute = context.app.commands.execute;
           mountApp(context.root, store, {
             restore: context.restore?.state,
             onViewState: context.setRestoreState?.bind(context),
+            onPublish: () => void execute(`plugin.${PLUGIN_ID}.publish`, {}),
           });
         } else {
           // preview role — 커맨드 표면이 없다. 로컬 시드 스토어로 정적 미리보기.

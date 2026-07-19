@@ -2,6 +2,7 @@
 // 빈 상태, 끝 드롭존. 프레임 폭은 기기 토글(390/960)로 애니메이션한다.
 import type { CSSProperties } from "react";
 import type { StudioFacade, StudioState } from "@/store";
+import { shellPalette } from "@/core/model";
 import { FONT_MONO } from "@/styles";
 import { Editable, stop, type ViewApi } from "@/view/common";
 import { SectionView } from "@/view/SectionView";
@@ -25,13 +26,7 @@ export function Canvas({ S, store, V }: { S: StudioState; store: StudioFacade; V
   const showMobLeft = (S.layout === "left" || S.layout === "both") && isMobile;
   const showMobRight = (S.layout === "right" || S.layout === "both") && isMobile;
 
-  const canvasBg = S.pageDark ? "#0b1120" : "#fff";
-  const canvasLine = S.pageDark ? "#26334d" : "#d8dfe7";
-  const shellBg = S.pageDark ? "#0d1526" : "#fbfcfd";
-  const shellLine = S.pageDark ? "#22304a" : "#e8edf2";
-  const shellMut = S.pageDark ? "#7c8ba6" : "#6b7686";
-  const shellFg = S.pageDark ? "#e6ecf5" : "#1b2430";
-  const shellBtnBg = S.pageDark ? "#16203a" : "#fff";
+  const { canvasBg, canvasLine, shellBg, shellLine, shellMut, shellFg, shellBtnBg } = shellPalette(S.pageDark);
 
   const logo = LOGO_PRESETS[S.logoIcon] ?? LOGO_PRESETS[0];
   const logoShowIcon = S.logoMode !== "text";

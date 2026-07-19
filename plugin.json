@@ -15,7 +15,8 @@
     "ui",
     "commands",
     "data",
-    "programs"
+    "programs",
+    "fs:write"
   ],
   "contributes": {
     "views": [
@@ -254,6 +255,14 @@
           "ko": "사이드바·모바일 바 고정을 설정합니다",
           "en": "Sets sidebar and mobile bar pinning"
         }
+      },
+      {
+        "name": "publish",
+        "title": {
+          "ko": "현재 페이지를 단일 HTML 로 발행합니다",
+          "en": "Publishes the current page as a standalone HTML file"
+        },
+        "danger": "destructive"
       }
     ],
     "nodes": [
@@ -318,6 +327,13 @@
         "description": {
           "ko": "섹션 드롭존 — dz/<인덱스>|dz/end. 라이브러리 드래그 배치의 드롭 대상입니다",
           "en": "Section drop zone — dz/<index>|dz/end. Drop target for library drag placement"
+        }
+      },
+      {
+        "id": "publish",
+        "description": {
+          "ko": "발행 버튼 — 클릭하면 현재 페이지를 프로젝트 루트에 단일 HTML 로 발행합니다",
+          "en": "Publish button — click publishes the current page as standalone HTML at the project root"
         }
       }
     ]

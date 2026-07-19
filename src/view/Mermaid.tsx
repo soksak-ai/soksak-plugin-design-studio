@@ -1,6 +1,7 @@
 // Mermaid 다이어그램 렌더 — 번들된 mermaid 로 코드→SVG. (테마|코드)별 캐시, 이벤트 구동(폴링 없음).
 import { useEffect, useRef, useState } from "react";
 import { FONT_MONO, FONT_SANS } from "@/styles";
+import { useExportMode } from "@/view/common";
 
 // mermaid 는 지연 로드 — 번들엔 포함되지만 첫 Diagram 렌더까지 평가를 미룬다(3MB 파싱 비용을
 // 활성화 경로에서 제거). esbuild 단일 번들에서 내부 dynamic import 는 lazy-init 로 변환된다.
@@ -14,6 +15,10 @@ const loadMermaid = (): Promise<MermaidApi> => (mermaidLoad ??= import("mermaid"
 let currentTheme: string | null = null;
 const cache = new Map<string, string>();
 let seq = 0;
+
+export async function renderMermaid(code: string, dark: boolean): Promise<string> {
+  return render(code, dark);
+}
 
 async function render(code: string, dark: boolean): Promise<string> {
   const theme = dark ? "dark" : "neutral";
@@ -42,6 +47,7 @@ async function render(code: string, dark: boolean): Promise<string> {
 }
 
 export function Mermaid(props: { code: string; dark: boolean }) {
+  const exportMode = useExportMode();
   const [html, setHtml] = useState<string | null>(null);
   const alive = useRef(true);
   useEffect(() => {
@@ -53,11 +59,13 @@ export function Mermaid(props: { code: string; dark: boolean }) {
       alive.current = false;
     };
   }, [props.code, props.dark]);
+  const exported = exportMode ? exportMode.mermaidSvg[(props.dark ? "d|" : "l|") + props.code] : undefined;
   return (
     <div
       style={{ display: "flex", justifyContent: "center", minHeight: 90, overflow: "auto" }}
       dangerouslySetInnerHTML={{
         __html:
+          exported ??
           html ??
           '<div style="font-family:monospace;font-size:11px;color:#8a94a3;padding:24px">다이어그램 렌더링 중…</div>',
       }}

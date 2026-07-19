@@ -5,7 +5,7 @@ import type { CardItem, FieldItem, FootCol, PlanItem, Section, TextItem } from "
 import type { StudioFacade, StudioState } from "@/store";
 import { CATALOG, SECTION_TYPES, colorsFor, darkBg, padDefaults } from "@/core/model";
 import { FONT_MONO, FONT_SANS } from "@/styles";
-import { Editable, stop, type ViewApi } from "@/view/common";
+import { Editable, stop, useExportMode, type ViewApi } from "@/view/common";
 import { ImageSlot } from "@/view/ImageSlot";
 import { Mermaid } from "@/view/Mermaid";
 
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export function SectionView({ s, i, S, store, V }: Props) {
+  const exportMode = useExportMode();
   const accent = S.accent;
   const cat = CATALOG[s.type];
   const isMobile = S.device === "mobile";
@@ -881,7 +882,8 @@ export function SectionView({ s, i, S, store, V }: Props) {
 
   return (
     <div>
-      {/* 섹션 앞 드롭존 */}
+      {/* 섹션 앞 드롭존 — 발행에는 없다 */}
+      {exportMode ? null : (
       <div
         data-node={"dz/" + i}
         onDragOver={(e) => {
@@ -902,10 +904,11 @@ export function SectionView({ s, i, S, store, V }: Props) {
       >
         <div style={{ width: "60%", height: 3, borderRadius: 2, background: accent, opacity: dzActive ? 1 : 0, animation: dzActive ? "cs-dropPulse 1s infinite" : "none" }} />
       </div>
+      )}
 
       <div
-        data-node={"section/" + s.id}
-        draggable
+        data-node={exportMode ? undefined : "section/" + s.id}
+        draggable={!exportMode}
         onClick={(e) => {
           e.stopPropagation();
           V.select(s.id);

@@ -49,10 +49,12 @@ export default function App({
   store,
   restore,
   onViewState,
+  onPublish,
 }: {
   store: StudioFacade;
   restore?: unknown;
   onViewState?: (state: unknown) => void;
+  onPublish?: () => void;
 }) {
   const S = useStudio(store);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -250,7 +252,7 @@ export default function App({
 
   return (
     <div ref={rootRef} className="cs-root" style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}>
-      <TopBar S={S} store={store} V={V} />
+      <TopBar S={S} store={store} V={V} onPublish={onPublish} />
       <div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
         {!panelL ? <LibraryRail L={L} /> : null}
         {panelL || libFlyout ? <LibraryPanel S={S} store={store} V={V} L={L} /> : null}

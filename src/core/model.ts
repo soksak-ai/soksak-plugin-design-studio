@@ -343,6 +343,21 @@ export function darkBg(bg: string): string {
   return map[bg] || "#0f172a";
 }
 
+/** 캔버스 프레임·페이지 셸 팔레트 — 에디터 캔버스와 발행 렌더가 같은 값을 쓴다(단일진실). */
+export function shellPalette(pageDark: boolean): {
+  canvasBg: string;
+  canvasLine: string;
+  shellBg: string;
+  shellLine: string;
+  shellMut: string;
+  shellFg: string;
+  shellBtnBg: string;
+} {
+  return pageDark
+    ? { canvasBg: "#0b1120", canvasLine: "#26334d", shellBg: "#0d1526", shellLine: "#22304a", shellMut: "#7c8ba6", shellFg: "#e6ecf5", shellBtnBg: "#16203a" }
+    : { canvasBg: "#fff", canvasLine: "#d8dfe7", shellBg: "#fbfcfd", shellLine: "#e8edf2", shellMut: "#6b7686", shellFg: "#1b2430", shellBtnBg: "#fff" };
+}
+
 export function colorsFor(bg: string, force: boolean): { fg: string; muted: string; line: string; cardBg: string } {
   const dark = force || bg === "#0f172a" || bg === "#1b2430" || bg === "#0b1322" || bg === "#151f3d" || bg === "#17182b";
   return dark
