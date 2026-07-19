@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "doctor": "soksak-plugin-doctor",
-    "test-unit": "npm run typecheck && vitest run"
+    "test-unit": "npm run typecheck && vitest run",
+    "e2e": "node scripts/e2e/design-studio.mjs"
   },
   "dependencies": {
     "mermaid": "^11.16.0",

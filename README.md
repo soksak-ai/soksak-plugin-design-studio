@@ -67,5 +67,6 @@ move/swap`, `part.add/update/remove/move`, `template.list/apply`, `ai`, `undo`, 
 npm install
 npm run test-unit   # typecheck + vitest (core model contract)
 npm run build       # esbuild → main.js (single ESM bundle, mermaid included)
+npm run e2e         # live E2E against the running app (idempotent; SOKSAK_SOCKET picks the lane)
 sok plugin.dev.load '{"path":"/abs/path/soksak-plugin-design-studio"}'
 ```

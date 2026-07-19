@@ -59,5 +59,6 @@ swap`, `part.add/update/remove/move`, `template.list/apply`, `ai`, `undo`, `redo
 npm install
 npm run test-unit   # typecheck + vitest (코어 모델 계약)
 npm run build       # esbuild → main.js (단일 ESM 번들, mermaid 포함)
+npm run e2e         # 구동 중인 앱 대상 라이브 E2E(멱등, SOKSAK_SOCKET 으로 레인 선택)
 sok plugin.dev.load '{"path":"/abs/path/soksak-plugin-design-studio"}'
 ```
