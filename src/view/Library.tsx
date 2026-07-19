@@ -74,6 +74,7 @@ export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: Studio
 
   const groupHeader = (label: string, hint: string, group: "components" | "templates") => (
     <button
+      data-node={"group/" + group}
       onClick={() => L.setOpenGroup(group)}
       style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: group === "templates" ? "8px 2px 4px" : "4px 2px", fontFamily: FONT_SANS, fontSize: 10.5, fontWeight: 600, color: "#8a94a3", textTransform: "uppercase", letterSpacing: ".06em", textAlign: "left" }}
     >
@@ -193,7 +194,7 @@ export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: Studio
                   <div
                     key={t}
                     className="hov-lib"
-                    data-node={"lib/" + t}
+                    data-node={"lib/" + t.toLowerCase()}
                     draggable
                     onDragStart={() => V.setDrag({ kind: "add", type: t })}
                     onClick={() => store.sectionAdd(t, 0, null)}
@@ -218,7 +219,7 @@ export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: Studio
                   <div
                     key={t.name}
                     className="hov-tpl"
-                    data-node={"tpl/" + t.name}
+                    data-node={"tpl/" + t.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
                     onClick={() => {
                       store.templateApply(t.name);
                       V.select(null);
