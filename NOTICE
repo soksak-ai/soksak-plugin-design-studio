@@ -1,0 +1,8 @@
+soksak-plugin-design-studio
+Copyright 2026 soksak contributors
+
+This product includes software developed by the soksak contributors.
+
+The distributed main.js bundle includes third-party software:
+- React and React DOM (MIT License) — Copyright (c) Meta Platforms, Inc. and affiliates.
+- Mermaid (MIT License) — Copyright (c) 2014 - 2022 Knut Sveidqvist.

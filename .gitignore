@@ -1,2 +1,4 @@
+.soksak.json
 node_modules/
 harness/harness.js
+dist/
