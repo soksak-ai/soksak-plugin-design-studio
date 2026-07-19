@@ -1,7 +1,7 @@
 {
   "name": "soksak-plugin-design-studio",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "license": "Apache-2.0",
   "description": "soksak 디자인 스튜디오 플러그인 — 컴포넌트 조립형 페이지 빌더",

@@ -5,7 +5,7 @@
     "ko": "디자인 스튜디오",
     "en": "Design Studio"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": {
     "ko": "컴포넌트 조립형 페이지 빌더 — 23종 섹션 카탈로그와 변형을 쌓아 랜딩페이지를 만들고, 템플릿 부분 교체·자연어 지시·인라인 편집·인스펙터·구조 트리·버전 히스토리로 다듬는다. 헤드리스: 모든 기능이 명령이라 CLI/MCP 로 구동한다.",
     "en": "Component-composition page builder — stack 23 section kinds with variants into a landing page, then refine with template part-swaps, natural-language instructions, inline editing, an inspector, a structure tree, and version history. Headless: every capability is a command, driven from CLI/MCP."

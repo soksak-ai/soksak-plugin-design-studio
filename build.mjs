@@ -3,6 +3,8 @@
 // mermaid 는 다이어그램 섹션 렌더용으로 번들에 포함한다(sandbox 는 외부 네트워크 불가).
 import { build, context } from "esbuild";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+const pkgVersion = createRequire(import.meta.url)("./package.json").version;
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,6 +49,7 @@ const opts = {
   define: {
     "process.env.NODE_ENV": '"production"',
     "import.meta.env.DEV": "false",
+    __PLUGIN_VERSION__: JSON.stringify(pkgVersion),
   },
   outfile: "main.js",
   minify: true, // mermaid 포함 번들 — 크기 때문에 상시 minify

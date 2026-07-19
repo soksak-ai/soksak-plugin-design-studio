@@ -74,7 +74,7 @@ export function buildCommands(storeReady: () => Promise<StudioStore>, getIo: () 
     };
 
   return {
-    ping: withStore(() => ok("디자인 스튜디오 v0.0.1 정상", { plugin: "soksak-plugin-design-studio", version: "0.0.1" })),
+    ping: withStore(() => ok(`디자인 스튜디오 v${__PLUGIN_VERSION__} 정상`, { plugin: "soksak-plugin-design-studio", version: __PLUGIN_VERSION__ })),
 
     state: withStore((store) => {
       const s = store.get();
