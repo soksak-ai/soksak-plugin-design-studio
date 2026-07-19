@@ -159,10 +159,8 @@ async function main() {
   await cmd(P + "template.apply", { name: "X" }, false);
   await cmd(P + "accent.set", { color: "red" }, false);
   await cmd(P + "part.move", { id: heroId, list: "plans", from: 0, to: 9 }, false);
-  await cmd(P + "publish", { path: "" }, true); // 프로젝트 루트가 있으면 성공 — 아래에서 파일 정리
-  // 위 publish 기본 경로 산출물 정리(있을 때만) — 멱등
-  const rootOut = val(await rpc(P + "state"));
-  void rootOut;
+  // publish 기본 경로(프로젝트 루트)는 여기서 검증하지 않는다 — E2E 가 대상 프로젝트에
+  // 산출물을 남기는 부작용 금지. 발행 검증은 아래 ⑤에서 명시적 tmp 경로로만 한다.
 
   // ── 2) 영속(kv) ─────────────────────────────────────────────────────────
   console.log("── 영속");
