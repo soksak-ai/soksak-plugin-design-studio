@@ -298,6 +298,27 @@
           "ko": "페이지 항목 — page/<id>. 클릭하면 그 페이지로 전환합니다",
           "en": "Page item — page/<id>. Click switches to that page"
         }
+      },
+      {
+        "id": "edit",
+        "description": {
+          "ko": "인라인 편집면 — edit/<섹션id>/<title|sub|btn1|btn2|badge|copy>. ui.input.fill 로 텍스트를 확정 입력합니다",
+          "en": "Inline editable — edit/<sectionId>/<field>. ui.input.fill commits text"
+        }
+      },
+      {
+        "id": "img",
+        "description": {
+          "ko": "이미지 슬롯 — img/<섹션id>/<슬롯>. ui.input.dnd files 로 이미지를 드롭합니다",
+          "en": "Image slot — img/<sectionId>/<slot>. Drop images via ui.input.dnd files"
+        }
+      },
+      {
+        "id": "dz",
+        "description": {
+          "ko": "섹션 드롭존 — dz/<인덱스>|dz/end. 라이브러리 드래그 배치의 드롭 대상입니다",
+          "en": "Section drop zone — dz/<index>|dz/end. Drop target for library drag placement"
+        }
       }
     ]
   }

@@ -97,7 +97,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "none" }}>
             <div style={{ width: 18, height: 18, borderRadius: 5, background: accent }} />
             <Editable
-              k={s.id + "t" + E}
+              k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
               text={s.title ?? ""}
               onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
               style={{ fontWeight: 700, fontSize: 14, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
@@ -124,7 +124,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
               </div>
               <Editable
                 tag="button"
-                k={s.id + "b1" + E}
+                k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
                 text={s.btn1 ?? ""}
                 onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
                 style={{
@@ -171,21 +171,21 @@ export function SectionView({ s, i, S, store, V }: Props) {
       return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}>
           <Editable
-            k={s.id + "bd" + E}
+            k={s.id + "bd" + E} node={"edit/" + s.id + "/badge"}
             text={s.badge ?? ""}
             onCommit={(v) => editSec({ badge: v }, "배지 수정")}
             style={mono9({ fontSize: 10.5, color: accent, letterSpacing: ".08em", textTransform: "uppercase", cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":badge") })}
           />
           <Editable
             tag="h1"
-            k={s.id + "t" + E}
+            k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
             text={s.title ?? ""}
             onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: "clamp(22px,4vw,38px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15, maxWidth: 560, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
           />
           <Editable
             tag="p"
-            k={s.id + "s" + E}
+            k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
             text={s.sub ?? ""}
             onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: 14, color: c.muted, maxWidth: 440, lineHeight: 1.6, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
@@ -193,14 +193,14 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
             <Editable
               tag="button"
-              k={s.id + "b1" + E}
+              k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
               text={s.btn1 ?? ""}
               onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
               style={{ height: 36, padding: "0 20px", border: "none", borderRadius: 8, background: accent, color: "#fff", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn1") }}
             />
             <Editable
               tag="button"
-              k={s.id + "b2" + E}
+              k={s.id + "b2" + E} node={"edit/" + s.id + "/btn2"}
               text={s.btn2 ?? ""}
               onCommit={(v) => editSec({ btn2: v }, "버튼 텍스트 수정")}
               style={{ height: 36, padding: "0 20px", border: `1px solid ${c.line}`, borderRadius: 8, background: "transparent", color: c.fg, fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn2") }}
@@ -215,14 +215,14 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Editable
               tag="h1"
-              k={s.id + "t" + E}
+              k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
               text={s.title ?? ""}
               onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
               style={{ margin: 0, fontSize: "clamp(20px,3.4vw,32px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.18, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
             />
             <Editable
               tag="p"
-              k={s.id + "s" + E}
+              k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
               text={s.sub ?? ""}
               onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
               style={{ margin: 0, fontSize: 13.5, color: c.muted, lineHeight: 1.6, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
@@ -230,7 +230,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               <Editable
                 tag="button"
-                k={s.id + "b1" + E}
+                k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
                 text={s.btn1 ?? ""}
                 onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
                 style={{ height: 34, padding: "0 18px", border: "none", borderRadius: 8, background: accent, color: "#fff", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn1") }}
@@ -238,7 +238,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
             </div>
           </div>
           <div style={{ aspectRatio: "4/3" }}>
-            <ImageSlot src={s.images?.hero} placeholder="product shot — 이미지를 드래그하세요" radius={10} dark={dk} onImage={(u) => setImage("hero", u)} />
+            <ImageSlot node={"img/" + s.id + "/hero"} src={s.images?.hero} placeholder="product shot — 이미지를 드래그하세요" radius={10} dark={dk} onImage={(u) => setImage("hero", u)} />
           </div>
         </div>
       );
@@ -248,14 +248,14 @@ export function SectionView({ s, i, S, store, V }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", maxWidth: 620 }}>
           <Editable
             tag="h1"
-            k={s.id + "t" + E}
+            k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
             text={s.title ?? ""}
             onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: "clamp(20px,3.2vw,30px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
           />
           <Editable
             tag="p"
-            k={s.id + "s" + E}
+            k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
             text={s.sub ?? ""}
             onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: 13.5, color: c.muted, lineHeight: 1.6, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
@@ -272,7 +272,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
     const h2Title = (style?: CSSProperties) => (
       <Editable
         tag="h2"
-        k={s.id + "t" + E}
+        k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
         text={s.title ?? ""}
         onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
         style={{ margin: 0, fontSize: 20, fontWeight: 700, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title"), ...style }}
@@ -309,7 +309,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10 }}>
             {Array.from({ length: 6 }, (_, k) => (
               <div key={k} style={{ aspectRatio: "1" }}>
-                <ImageSlot src={s.images?.["g" + k]} placeholder={"image " + (k + 1)} radius={8} dark={dk} onImage={(u) => setImage("g" + k, u)} />
+                <ImageSlot node={"img/" + s.id + "/g" + k} src={s.images?.["g" + k]} placeholder={"image " + (k + 1)} radius={8} dark={dk} onImage={(u) => setImage("g" + k, u)} />
               </div>
             ))}
           </div>
@@ -342,7 +342,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
           <Editable
-            k={s.id + "t" + E}
+            k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
             text={s.title ?? ""}
             onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
             style={{ fontSize: 11.5, fontWeight: 600, color: c.muted, letterSpacing: ".04em", cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
@@ -416,7 +416,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {h2Title({ textAlign: "center" })}
           <div style={{ aspectRatio: "16/9", position: "relative" }}>
-            <ImageSlot src={s.images?.vid} placeholder="비디오 썸네일을 드래그하세요" radius={12} dark={dk} onImage={(u) => setImage("vid", u)} />
+            <ImageSlot node={"img/" + s.id + "/vid"} src={s.images?.vid} placeholder="비디오 썸네일을 드래그하세요" radius={12} dark={dk} onImage={(u) => setImage("vid", u)} />
             <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
               <div style={{ width: 54, height: 54, borderRadius: "50%", background: "rgba(15,23,42,.55)", display: "grid", placeItems: "center", color: "#fff", fontSize: 16, paddingLeft: 4 }}>▶</div>
             </div>
@@ -439,7 +439,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
                 style={{ display: "flex", flexDirection: "column", gap: 9, cursor: "pointer", border: `1px solid ${c.line}`, borderRadius: 10, overflow: "hidden", background: c.cardBg, boxShadow: partRing("cards", k) }}
               >
                 <div style={{ aspectRatio: "16/9" }}>
-                  <ImageSlot src={s.images?.["b" + (k + 1)]} placeholder="썸네일" dark={dk} onImage={(u) => setImage("b" + (k + 1), u)} />
+                  <ImageSlot node={"img/" + s.id + "/b" + (k + 1)} src={s.images?.["b" + (k + 1)]} placeholder="썸네일" dark={dk} onImage={(u) => setImage("b" + (k + 1), u)} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 5, padding: "0 14px 14px" }}>
                   {cardT(f, k, { fontSize: 13, fontWeight: 600, cursor: "text" })}
@@ -455,14 +455,14 @@ export function SectionView({ s, i, S, store, V }: Props) {
       return (
         <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
           <Editable
-            k={s.id + "t" + E}
+            k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
             text={s.title ?? ""}
             onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
             style={{ fontSize: 13, fontWeight: 600, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
           />
           <Editable
             tag="button"
-            k={s.id + "b1" + E}
+            k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
             text={s.btn1 ?? ""}
             onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
             style={{ height: 28, padding: "0 14px", border: "none", borderRadius: 7, background: accent, color: "#fff", fontFamily: FONT_SANS, fontSize: 11.5, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn1") }}
@@ -578,7 +578,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ fontSize: 26, color: accent, lineHeight: 1 }}>"</div>
           <Editable
             tag="p"
-            k={s.id + "s" + E}
+            k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
             text={s.sub ?? ""}
             onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: 15, lineHeight: 1.65, maxWidth: 520, fontWeight: 500, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
@@ -586,7 +586,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#d3dbe4" }} />
             <Editable
-              k={s.id + "t" + E}
+              k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
               text={s.title ?? ""}
               onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
               style={{ fontSize: 12, color: c.muted, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
@@ -694,7 +694,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           </div>
           <Editable
             tag="button"
-            k={s.id + "b1" + E}
+            k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
             text={s.btn1 ?? ""}
             onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
             style={{ height: 36, border: "none", borderRadius: 8, background: accent, color: "#fff", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn1") }}
@@ -728,21 +728,21 @@ export function SectionView({ s, i, S, store, V }: Props) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, textAlign: "center" }}>
           <Editable
             tag="h2"
-            k={s.id + "t" + E}
+            k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
             text={s.title ?? ""}
             onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
           />
           <Editable
             tag="p"
-            k={s.id + "s" + E}
+            k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
             text={s.sub ?? ""}
             onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
             style={{ margin: 0, fontSize: 13, color: c.muted, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
           />
           <Editable
             tag="button"
-            k={s.id + "b1" + E}
+            k={s.id + "b1" + E} node={"edit/" + s.id + "/btn1"}
             text={s.btn1 ?? ""}
             onCommit={(v) => editSec({ btn1: v }, "버튼 텍스트 수정")}
             style={{ height: 38, padding: "0 24px", border: "none", borderRadius: 9, background: invert ? accent : "#1b2430", color: "#ffffff", fontFamily: FONT_SANS, fontSize: 13, fontWeight: 600, cursor: "text", boxShadow: elemRing(s.id + ":btn1") }}
@@ -781,7 +781,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
         );
       const img = (
         <div key="img" style={{ aspectRatio: "16/10" }}>
-          <ImageSlot src={s.images?.col} placeholder="이미지를 드래그하세요" radius={10} dark={dk} onImage={(u) => setImage("col", u)} />
+          <ImageSlot node={"img/" + s.id + "/col"} src={s.images?.col} placeholder="이미지를 드래그하세요" radius={10} dark={dk} onImage={(u) => setImage("col", u)} />
         </div>
       );
       return (
@@ -798,7 +798,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ flex: 1, height: 1, background: c.line }} />
             <Editable
-              k={s.id + "t" + E}
+              k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
               text={s.title ?? ""}
               onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
               style={mono9({ fontSize: 10, color: c.muted, letterSpacing: ".14em", textTransform: "uppercase", cursor: "text", flex: "none" })}
@@ -817,14 +817,14 @@ export function SectionView({ s, i, S, store, V }: Props) {
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <div style={{ width: 16, height: 16, borderRadius: 4, background: accent }} />
                 <Editable
-                  k={s.id + "t" + E}
+                  k={s.id + "t" + E} node={"edit/" + s.id + "/title"}
                   text={s.title ?? ""}
                   onCommit={(v) => editSec({ title: v }, "텍스트 수정")}
                   style={{ fontWeight: 700, fontSize: 13, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":title") }}
                 />
               </div>
               <Editable
-                k={s.id + "s" + E}
+                k={s.id + "s" + E} node={"edit/" + s.id + "/sub"}
                 text={s.sub ?? ""}
                 onCommit={(v) => editSec({ sub: v }, "텍스트 수정")}
                 style={{ fontSize: 11, color: c.muted, lineHeight: 1.5, cursor: "text", borderRadius: 3, boxShadow: elemRing(s.id + ":sub") }}
@@ -867,7 +867,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
           </div>
           <div style={{ borderTop: `1px solid ${c.line}`, paddingTop: 12 }}>
             <Editable
-              k={s.id + "cp" + E}
+              k={s.id + "cp" + E} node={"edit/" + s.id + "/copy"}
               text={s.copy ?? ""}
               onCommit={(v) => editSec({ copy: v }, "카피라이트 수정")}
               style={mono9({ display: "inline-block", fontSize: 10, color: c.muted, cursor: "text", borderRadius: 3, padding: "2px 4px", margin: "-2px -4px", boxShadow: elemRing(s.id + ":copy") })}
@@ -883,6 +883,7 @@ export function SectionView({ s, i, S, store, V }: Props) {
     <div>
       {/* 섹션 앞 드롭존 */}
       <div
+        data-node={"dz/" + i}
         onDragOver={(e) => {
           if (!addDragging) return;
           e.preventDefault();

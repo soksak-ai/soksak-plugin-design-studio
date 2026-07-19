@@ -50,6 +50,8 @@ export function Editable(props: {
   text: string;
   style: CSSProperties;
   className?: string;
+  /** DOM 투명성 — 노출 주소(data-node). 외부(ui.input.fill)가 인라인 편집을 구동한다. */
+  node?: string;
   onCommit: (v: string) => void;
   onClick?: (e: MouseEvent) => void;
 }): ReactNode {
@@ -57,6 +59,7 @@ export function Editable(props: {
     props.tag ?? "span",
     {
       key: props.k,
+      "data-node": props.node,
       contentEditable: true,
       suppressContentEditableWarning: true,
       spellCheck: false,

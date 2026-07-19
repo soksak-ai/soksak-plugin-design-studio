@@ -8,6 +8,8 @@ export function ImageSlot(props: {
   placeholder: string;
   radius?: number;
   dark: boolean;
+  /** DOM 투명성 — 노출 주소(data-node). 외부(ui.input.dnd files)가 이미지 드롭을 구동한다. */
+  node?: string;
   onImage: (dataURL: string) => void;
 }) {
   const [over, setOver] = useState(false);
@@ -27,6 +29,7 @@ export function ImageSlot(props: {
   if (props.src) {
     return (
       <div
+        data-node={props.node}
         style={{ width: "100%", height: "100%", borderRadius: rad, overflow: "hidden" }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -40,6 +43,7 @@ export function ImageSlot(props: {
   }
   return (
     <div
+      data-node={props.node}
       onDragOver={(e) => {
         e.preventDefault();
         e.stopPropagation();

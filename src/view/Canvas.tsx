@@ -272,6 +272,7 @@ export function Canvas({ S, store, V }: { S: StudioState; store: StudioFacade; V
 
             {S.stack.length > 0 ? (
               <div
+                data-node="dz/end"
                 onDragOver={(e) => {
                   if (!addDragging) return;
                   e.preventDefault();
