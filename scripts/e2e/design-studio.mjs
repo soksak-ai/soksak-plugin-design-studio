@@ -1,6 +1,9 @@
 // soksak-plugin-design-studio 라이브 E2E — SOKSAK_SOCKET JSON-RPC 로 전체 표면 검증.
-// 실행: 앱 구동 + `npm run e2e` (dev.load·enable 은 스크립트가 시도 — 멱등).
-//   debug 레인: SOKSAK_SOCKET=$HOME/.soksak-debug/com.soksak.debug.sock npm run e2e
+// 실행: 이 폴더가 사는 홈의 앱을 띄우고 `npm run e2e` (dev.load·enable 은 스크립트가 시도 — 멱등).
+//   이 폴더는 dev 홈(`~/.soksak-dev/plugins/`)에 있으므로 **dev 빌드**로 돌린다:
+//     SOKSAK_SOCKET=$HOME/.soksak-dev/com.soksak.dev.sock npm run e2e
+//   다른 홈(debug 등)의 앱으로는 돌리지 않는다 — 코어가 다른 홈 안의 경로를 dev source 로
+//   받지 않는다(INVALID_PARAMS). 그 홈에서 확인하려면 발행본을 그 홈에 설치한 뒤 돌린다.
 // 검증 축: ① 명령 30종(성공·오류 봉투) ② kv 영속 ③ 노출 노드 ④ UI 실구동(fill·dnd 재정렬·
 // 라이브러리 드래그 배치·이미지 파일 드롭) ⑤ 발행물(HTML 구조) ⑥ 스냅샷. 종료 상태는 항상
 // Landing·desktop·light·stack 으로 복원한다(멱등).
