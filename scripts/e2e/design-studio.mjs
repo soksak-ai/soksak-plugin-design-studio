@@ -100,9 +100,18 @@ async function main() {
   await connect();
 
   // ── 0) 창 결정 + 자기 적재(멱등) ──────────────────────────────────────────
+  // 창은 명시가 우선이다 — 워크스페이스 창이 여럿인 앱에서 "첫 번째"를 집으면 남이 쓰는 창을
+  // 휘젓는다. SOKSAK_WINDOW 로 자기 창을 지정하고, 없을 때만 첫 워크스페이스 창으로 떨어진다.
   const wins = val(await rpc("window.list"));
-  WINDOW = (wins.data?.labels ?? []).find((l) => l !== "main") ?? null;
-  ok(!!WINDOW, "워크스페이스 창 존재: " + WINDOW);
+  const labels = wins.data?.labels ?? [];
+  const want = process.env.SOKSAK_WINDOW;
+  if (want) {
+    ok(labels.includes(want), "지정 창 존재: " + want, labels);
+    WINDOW = want;
+  } else {
+    WINDOW = labels.find((l) => l !== "main") ?? null;
+    ok(!!WINDOW, "워크스페이스 창 존재: " + WINDOW);
+  }
   await rpc("plugin.dev.load", { path: PLUGIN_DIR });
   const en = val(await rpc("plugin.enable", { id: PLUGIN_ID }));
   ok(en.ok, "plugin.enable", en);
