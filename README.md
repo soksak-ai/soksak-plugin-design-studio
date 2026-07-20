@@ -70,3 +70,14 @@ npm run build       # esbuild → main.js (single ESM bundle, mermaid included)
 npm run e2e         # live E2E against the running app (idempotent; SOKSAK_SOCKET picks the lane)
 sok plugin.dev.load '{"path":"/abs/path/soksak-plugin-design-studio"}'
 ```
+
+The release archive is byte-reproducible under the Node version in `.nvmrc` — the same pin the
+release workflow reads. Rebuilding it on any other Node yields a different `sha256` because zlib
+differs between versions, so a mismatch means the wrong toolchain, not a tampered asset:
+
+```
+git checkout v0.0.2
+node scripts/build-release.mjs --commit "$(git rev-parse HEAD)" --out dist
+```
+
+The resulting `sha256` equals the one that release's `release.json` declares for its archive.

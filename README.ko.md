@@ -62,3 +62,14 @@ npm run build       # esbuild → main.js (단일 ESM 번들, mermaid 포함)
 npm run e2e         # 구동 중인 앱 대상 라이브 E2E(멱등, SOKSAK_SOCKET 으로 레인 선택)
 sok plugin.dev.load '{"path":"/abs/path/soksak-plugin-design-studio"}'
 ```
+
+릴리즈 아카이브는 `.nvmrc` 의 Node 버전에서 바이트 재현된다 — 릴리즈 워크플로가 읽는 것과 같은 핀이다.
+다른 Node 로 다시 만들면 zlib 이 버전마다 달라 `sha256` 이 달라지므로, 불일치는 자산 위변조가 아니라
+툴체인이 틀렸다는 뜻이다:
+
+```
+git checkout v0.0.2
+node scripts/build-release.mjs --commit "$(git rev-parse HEAD)" --out dist
+```
+
+나온 `sha256` 은 그 릴리즈의 `release.json` 이 아카이브에 선언한 값과 같다.
