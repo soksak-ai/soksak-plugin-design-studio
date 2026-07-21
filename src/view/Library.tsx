@@ -3,6 +3,7 @@ import type { StudioFacade, StudioState } from "@/store";
 import { CATALOG, SECTION_TYPES, TEMPLATES } from "@/core/model";
 import { FONT_MONO, FONT_SANS } from "@/styles";
 import type { ViewApi } from "@/view/common";
+import { railPanelBorderRightWidth } from "@/view/sidebarEjection";
 
 export interface LibraryUi {
   panelL: boolean;
@@ -94,7 +95,9 @@ export function LibraryPanel({ S, store, V, L, fill = false }: { S: StudioState;
         width: fill ? "100%" : 272,
         flex: "none",
         background: "#ffffff",
-        borderRight: "1px solid #dde3ea",
+        borderRightStyle: "solid",
+        borderRightColor: "#dde3ea",
+        borderRightWidth: railPanelBorderRightWidth({ fill }),
         display: "flex",
         flexDirection: "column",
         minHeight: 0,

@@ -8,11 +8,12 @@ import { moveTo } from "@/core/model";
 import { useStudio } from "@/view/useStore";
 import type { DragPayload, SelPart, ViewApi } from "@/view/common";
 import { TopBar } from "@/view/TopBar";
-import { LibraryPanel, LibraryRail, type LibraryUi } from "@/view/Library";
+import { LibraryPanel, type LibraryUi } from "@/view/Library";
 import { Canvas } from "@/view/Canvas";
-import { InspectorBody, InspectorRail } from "@/view/Inspector";
+import { InspectorBody } from "@/view/Inspector";
 import { TreePanel } from "@/view/TreePanel";
 import { railContainer, subscribeRail } from "@/view/railBridge";
+import { sidebarEjectionPlan } from "@/view/sidebarEjection";
 
 /** 재시작 복원(B3)으로 오가는 뷰-로컬 상태 스냅샷 — JSON 직렬화 가능 값만. */
 interface ViewRestoreState {
@@ -78,7 +79,7 @@ export default function App({
 
   const [panelL, setPanelL] = useState(R.panelL ?? true);
   const [libFlyout, setLibFlyout] = useState(false);
-  const [panelR, setPanelR] = useState(R.panelR ?? true);
+  const [panelR] = useState(R.panelR ?? true);
   const [tab, setTab] = useState<"files" | "assets">(R.tab ?? "assets");
   const [openGroup, setOpenGroup] = useState<"components" | "templates">(R.openGroup ?? "components");
   const [search, setSearch] = useState(R.search ?? "");
@@ -251,8 +252,8 @@ export default function App({
 
   const L: LibraryUi = { panelL, setPanelL, libFlyout, setLibFlyout, tab, setTab, openGroup, setOpenGroup, search, setSearch };
 
-  // 사이드바 방출(rail) — 레일 컨테이너가 등록되어 있으면 라이브러리/인스펙터를 포털로
-  // 그 컨테이너에 그린다(상태는 여기 그대로 — 이중 진실 0). 없으면 인라인 폴백(구코어·프리뷰).
+  // 사이드바 방출(rail) — 레일 컨테이너가 등록되어 있을 때만 포털로 그린다.
+  // 컨테이너 부재는 다른 콘텐츠에 결부됐다는 뜻이며, 옛 인라인 사이드바를 되살리지 않는다.
   const railLib = useSyncExternalStore(
     (fn) => subscribeRail(viewId, fn),
     () => railContainer(viewId, "library"),
@@ -261,10 +262,10 @@ export default function App({
     (fn) => subscribeRail(viewId, fn),
     () => railContainer(viewId, "inspector"),
   );
-
-  const sel = S.stack.find((s) => s.id === selectedId) ?? null;
-  const panelROverlay = !panelR && !!sel;
-  const showPanelR = panelR || panelROverlay;
+  const sidebarPlan = sidebarEjectionPlan({
+    libraryRail: railLib !== null,
+    inspectorRail: railInsp !== null,
+  });
 
   const inspectorContent = (
     <>
@@ -280,71 +281,19 @@ export default function App({
     <div ref={rootRef} className="cs-root" style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}>
       <TopBar S={S} store={store} V={V} onPublish={onPublish} />
       <div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
-        {railLib
+        {sidebarPlan.library === "rail" && railLib
           ? createPortal(<LibraryPanel S={S} store={store} V={V} L={L} fill />, railLib)
-          : (
-            <>
-              {!panelL ? <LibraryRail L={L} /> : null}
-              {panelL || libFlyout ? <LibraryPanel S={S} store={store} V={V} L={L} /> : null}
-            </>
-          )}
+          : null}
 
         <Canvas S={S} store={store} V={V} />
 
-        {railInsp
+        {sidebarPlan.inspector === "rail" && railInsp
           ? createPortal(
               <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>{inspectorContent}</div>,
               railInsp,
             )
           : null}
 
-        {!railInsp && showPanelR ? (
-          <div
-            style={{
-              width: 288,
-              flex: "none",
-              background: "#ffffff",
-              borderLeft: "1px solid #dde3ea",
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              position: panelROverlay ? "absolute" : "relative",
-              right: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: panelROverlay ? 45 : 1,
-              boxShadow: panelROverlay ? "-14px 0 36px rgba(20,30,45,.2)" : "none",
-            }}
-          >
-            <div style={{ flex: 1.3, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 13, minHeight: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 600, color: "#8a94a3", textTransform: "uppercase", letterSpacing: ".06em", flex: 1 }}>속성 편집</div>
-                {panelROverlay ? (
-                  <>
-                    <button className="hov-bg" title="사이드바로 고정" onClick={() => setPanelR(true)} style={{ width: 24, height: 24, border: "none", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: 11 }}>
-                      📌
-                    </button>
-                    <button
-                      className="hov-bg"
-                      title="닫기"
-                      onClick={() => V.select(null)}
-                      style={{ width: 24, height: 24, border: "none", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: 11, color: "#8a94a3" }}
-                    >
-                      ✕
-                    </button>
-                  </>
-                ) : (
-                  <button className="hov-bg" title="사이드바 접기" onClick={() => setPanelR(false)} style={{ width: 24, height: 24, border: "none", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: 12, color: "#8a94a3" }}>
-                    ⟩
-                  </button>
-                )}
-              </div>
-              <InspectorBody S={S} store={store} V={V} />
-            </div>
-            <TreePanel S={S} V={V} collapsed={treeCollapsed} setCollapsed={setTreeCollapsed} />
-          </div>
-        ) : null}
-        {!railInsp && !panelR && !panelROverlay ? <InspectorRail onExpand={() => setPanelR(true)} /> : null}
       </div>
     </div>
   );
