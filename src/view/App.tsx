@@ -1,6 +1,7 @@
 // 앱 조립 — 상단 바 / 좌측 라이브러리 / 캔버스 / 우측 인스펙터+트리.
 // 뷰-로컬 상태(선택·패널·드래그)는 여기서 소유하고 ViewApi 로 하위에 내린다.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { PartListKey } from "@/types";
 import type { StudioFacade } from "@/store";
 import { moveTo } from "@/core/model";
@@ -11,6 +12,7 @@ import { LibraryPanel, LibraryRail, type LibraryUi } from "@/view/Library";
 import { Canvas } from "@/view/Canvas";
 import { InspectorBody, InspectorRail } from "@/view/Inspector";
 import { TreePanel } from "@/view/TreePanel";
+import { railContainer, subscribeRail } from "@/view/railBridge";
 
 /** 재시작 복원(B3)으로 오가는 뷰-로컬 상태 스냅샷 — JSON 직렬화 가능 값만. */
 interface ViewRestoreState {
@@ -50,11 +52,14 @@ export default function App({
   restore,
   onViewState,
   onPublish,
+  viewId = null,
 }: {
   store: StudioFacade;
   restore?: unknown;
   onViewState?: (state: unknown) => void;
   onPublish?: () => void;
+  /** 이 studio 인스턴스의 콘텐츠 뷰 id — 레일 브리지 키. null=레일 없는 호스트(구코어/프리뷰). */
+  viewId?: string | null;
 }) {
   const S = useStudio(store);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -246,20 +251,54 @@ export default function App({
 
   const L: LibraryUi = { panelL, setPanelL, libFlyout, setLibFlyout, tab, setTab, openGroup, setOpenGroup, search, setSearch };
 
+  // 사이드바 방출(rail) — 레일 컨테이너가 등록되어 있으면 라이브러리/인스펙터를 포털로
+  // 그 컨테이너에 그린다(상태는 여기 그대로 — 이중 진실 0). 없으면 인라인 폴백(구코어·프리뷰).
+  const railLib = useSyncExternalStore(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "library"),
+  );
+  const railInsp = useSyncExternalStore(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "inspector"),
+  );
+
   const sel = S.stack.find((s) => s.id === selectedId) ?? null;
   const panelROverlay = !panelR && !!sel;
   const showPanelR = panelR || panelROverlay;
+
+  const inspectorContent = (
+    <>
+      <div style={{ flex: 1.3, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 13, minHeight: 0 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 600, color: "#8a94a3", textTransform: "uppercase", letterSpacing: ".06em" }}>속성 편집</div>
+        <InspectorBody S={S} store={store} V={V} />
+      </div>
+      <TreePanel S={S} V={V} collapsed={treeCollapsed} setCollapsed={setTreeCollapsed} />
+    </>
+  );
 
   return (
     <div ref={rootRef} className="cs-root" style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0, overflow: "hidden" }}>
       <TopBar S={S} store={store} V={V} onPublish={onPublish} />
       <div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
-        {!panelL ? <LibraryRail L={L} /> : null}
-        {panelL || libFlyout ? <LibraryPanel S={S} store={store} V={V} L={L} /> : null}
+        {railLib
+          ? createPortal(<LibraryPanel S={S} store={store} V={V} L={L} fill />, railLib)
+          : (
+            <>
+              {!panelL ? <LibraryRail L={L} /> : null}
+              {panelL || libFlyout ? <LibraryPanel S={S} store={store} V={V} L={L} /> : null}
+            </>
+          )}
 
         <Canvas S={S} store={store} V={V} />
 
-        {showPanelR ? (
+        {railInsp
+          ? createPortal(
+              <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>{inspectorContent}</div>,
+              railInsp,
+            )
+          : null}
+
+        {!railInsp && showPanelR ? (
           <div
             style={{
               width: 288,
@@ -305,7 +344,7 @@ export default function App({
             <TreePanel S={S} V={V} collapsed={treeCollapsed} setCollapsed={setTreeCollapsed} />
           </div>
         ) : null}
-        {!panelR && !panelROverlay ? <InspectorRail onExpand={() => setPanelR(true)} /> : null}
+        {!railInsp && !panelR && !panelROverlay ? <InspectorRail onExpand={() => setPanelR(true)} /> : null}
       </div>
     </div>
   );

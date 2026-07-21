@@ -5,6 +5,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import App from "@/view/App";
+import { registerRailContainer, type RailSlot } from "@/view/railBridge";
 import { GLOBAL_CSS } from "@/styles";
 import { StudioStore, type CommandOutcome, type ExecFn, type StudioFacade } from "@/store";
 import { buildCommands, type PublishIo } from "@/commands";
@@ -24,6 +25,10 @@ interface ViewContext {
   app: RuntimeApp;
   root: HTMLElement;
   signal: AbortSignal;
+  /** 콘텐츠 배치 뷰의 sessions view.id — per-view 레일 연결 키(studio 쪽). */
+  viewId?: string | null;
+  /** 레일 투영 마운트가 섬기는 결부 콘텐츠 뷰 id(코어 §4.4-lite — rail 뷰 쪽). */
+  boundViewId?: string | null;
   /** 복원 seam(B3) — 재시작 복원 마운트에 관찰됐던 뷰 상태가 돌아온다. 새 뷰는 null. */
   restore?: { cwd: string | null; state: unknown } | null;
   /** 뷰-로컬 관찰 상태 보고 — 뷰 레코드에 영속돼 restore.state 로 돌아온다(콘텐츠 배치 전용). */
@@ -65,7 +70,12 @@ const mounts = new WeakMap<HTMLElement, Root>();
 function mountApp(
   container: HTMLElement,
   store: StudioFacade,
-  view?: { restore?: unknown; onViewState?: (state: unknown) => void; onPublish?: () => void },
+  view?: {
+    restore?: unknown;
+    onViewState?: (state: unknown) => void;
+    onPublish?: () => void;
+    viewId?: string | null;
+  },
 ) {
   unmountApp(container);
   container.style.position = "relative";
@@ -83,7 +93,13 @@ function mountApp(
   const root = createRoot(host);
   root.render(
     <ErrBoundary>
-      <App store={store} restore={view?.restore} onViewState={view?.onViewState} onPublish={view?.onPublish} />
+      <App
+        store={store}
+        restore={view?.restore}
+        onViewState={view?.onViewState}
+        onPublish={view?.onPublish}
+        viewId={view?.viewId ?? null}
+      />
     </ErrBoundary>,
   );
   mounts.set(container, root);
@@ -94,6 +110,42 @@ function unmountApp(container: HTMLElement) {
   if (!root) return;
   root.unmount();
   mounts.delete(container);
+}
+
+const railCleanups = new WeakMap<HTMLElement, () => void>();
+
+function railView(slot: RailSlot) {
+  return {
+    async mount(context: ViewContext): Promise<void> {
+      railCleanups.get(context.root)?.();
+      const shadow = context.root.shadowRoot ?? context.root.attachShadow({ mode: "open" });
+      shadow.replaceChildren();
+      const style = document.createElement("style");
+      style.textContent = GLOBAL_CSS;
+      shadow.appendChild(style);
+      const host = document.createElement("div");
+      host.className = "studio-rail-host";
+      host.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:#fff";
+      context.root.style.position = "relative";
+      shadow.appendChild(host);
+      const bound = context.boundViewId ?? null;
+      if (!bound) {
+        host.innerHTML =
+          '<div style="padding:14px;font-size:11px;color:#8a94a3;text-align:center">디자인 스튜디오 결부 없음</div>';
+        railCleanups.set(context.root, () => shadow.replaceChildren());
+        return;
+      }
+      const off = registerRailContainer(bound, slot, host);
+      railCleanups.set(context.root, () => {
+        off();
+        shadow.replaceChildren();
+      });
+    },
+    unmount(context: ViewContext): void {
+      railCleanups.get(context.root)?.();
+      railCleanups.delete(context.root);
+    },
+  };
 }
 
 export default {
@@ -124,6 +176,10 @@ export default {
   commands: buildCommands(() => storePromise, () => publishIo),
 
   views: {
+    // 방출된 사이드바(rail) — 컨테이너만 소유하고 내용은 결부 studio 의 App 이 포털로 그린다
+    // (상태 단일 소유·이중 진실 0). 미결부(스튜디오 아님)면 정적 안내.
+    library: railView("library"),
+    inspector: railView("inspector"),
     studio: {
       async mount(context: ViewContext): Promise<void> {
         if (context.app.commands?.execute) {
@@ -135,6 +191,7 @@ export default {
             restore: context.restore?.state,
             onViewState: context.setRestoreState?.bind(context),
             onPublish: () => void execute(`plugin.${PLUGIN_ID}.publish`, {}),
+            viewId: context.viewId ?? null,
           });
         } else {
           // preview role — 커맨드 표면이 없다. 로컬 시드 스토어로 정적 미리보기.

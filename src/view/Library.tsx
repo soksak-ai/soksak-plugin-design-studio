@@ -57,7 +57,7 @@ export function LibraryRail({ L }: { L: LibraryUi }) {
   );
 }
 
-export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: StudioFacade; V: ViewApi; L: LibraryUi }) {
+export function LibraryPanel({ S, store, V, L, fill = false }: { S: StudioState; store: StudioFacade; V: ViewApi; L: LibraryUi; fill?: boolean }) {
   const accent = S.accent;
   const q = L.search.trim().toLowerCase();
   const isOverlay = !L.panelL && L.libFlyout;
@@ -91,7 +91,7 @@ export function LibraryPanel({ S, store, V, L }: { S: StudioState; store: Studio
   return (
     <div
       style={{
-        width: 272,
+        width: fill ? "100%" : 272,
         flex: "none",
         background: "#ffffff",
         borderRight: "1px solid #dde3ea",

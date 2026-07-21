@@ -31,7 +31,43 @@
           "content"
         ],
         "status": [],
-        "defaultPlacement": "content"
+        "defaultPlacement": "content",
+        "sidebar": {
+          "left": [
+            {
+              "ref": "self.library",
+              "instance": "per-view"
+            }
+          ],
+          "right": [
+            {
+              "ref": "self.inspector",
+              "instance": "per-view"
+            }
+          ]
+        }
+      },
+      {
+        "id": "library",
+        "title": {
+          "ko": "라이브러리",
+          "en": "Library"
+        },
+        "icon": "📚",
+        "placements": [
+          "rail"
+        ]
+      },
+      {
+        "id": "inspector",
+        "title": {
+          "ko": "속성",
+          "en": "Inspector"
+        },
+        "icon": "🎛️",
+        "placements": [
+          "rail"
+        ]
       }
     ],
     "programs": [
