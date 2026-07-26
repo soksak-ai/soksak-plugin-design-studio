@@ -85,7 +85,7 @@ function mountApp(
   style.textContent = GLOBAL_CSS;
   shadow.appendChild(style);
   const host = document.createElement("div");
-  host.className = "studio-host";
+  host.className = "studio-body";
   host.style.position = "absolute";
   host.style.inset = "0";
   host.style.overflow = "hidden";
@@ -124,7 +124,7 @@ function railView(slot: RailSlot) {
       style.textContent = GLOBAL_CSS;
       shadow.appendChild(style);
       const host = document.createElement("div");
-      host.className = "studio-rail-host";
+      host.className = "studio-rail-body";
       host.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:#fff";
       context.root.style.position = "relative";
       shadow.appendChild(host);
