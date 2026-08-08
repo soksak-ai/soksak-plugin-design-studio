@@ -60,9 +60,29 @@ let publishIo: PublishIo = {};
 
 // 컨트롤러 스토어 — activate 완료 전에 도착한 명령은 준비를 기다린다.
 let resolveStore: (store: StudioStore) => void;
-const storePromise = new Promise<StudioStore>((resolve) => {
+const storeConstructed = new Promise<StudioStore>((resolve) => {
   resolveStore = resolve;
 });
+
+// 문서 복원은 **처음 필요할 때 한 번**이다.
+//
+// activate 는 등록이다. 코어는 그 호출을 기다리므로 거기서 하는 일은 그대로 부팅에 실린다 —
+// 실측 2026-08-08: 창도 뷰도 없는데 이 플러그인이 activate 에서 자기 문서를 읽어 429ms 를
+// 썼고, 문서가 없는 홈에서는 시드를 **쓰기**까지 했다. 그때 만든 스토어는 뷰가 열리기 전까지
+// 아무도 안 본다.
+//
+// 명령과 뷰는 둘 다 이 자리를 지난다. 그래서 여기 한 번만 걸면 준비는 요구한 쪽이 유발하고,
+// 아무도 요구하지 않으면 아무 일도 일어나지 않는다.
+let storeReadying: Promise<StudioStore> | null = null;
+const storeReady = (): Promise<StudioStore> =>
+  (storeReadying ??= storeConstructed.then(async (store) => {
+    try {
+      await store.init();
+    } catch (e) {
+      console.error("[studio] store init 실패(메모리 모드로 계속):", e);
+    }
+    return store;
+  }));
 
 // 뷰 마운트 — Shadow DOM 격리 렌더(디자인 전역 CSS 주입).
 const mounts = new WeakMap<HTMLElement, Root>();
@@ -163,17 +183,12 @@ export default {
         ...(fsWrite ? { writeText: fsWrite } : {}),
         projectRoot: () => project?.current?.()?.root ?? null,
       };
-      const store = new StudioStore({ exec, ...(watch ? { watch } : {}) });
-      try {
-        await store.init();
-      } catch (e) {
-        console.error("[studio] store init 실패(메모리 모드로 계속):", e);
-      }
-      resolveStore(store);
+      // 만들기만 한다 — 문서는 처음 요구하는 쪽(명령·뷰)이 유발한다.
+      resolveStore(new StudioStore({ exec, ...(watch ? { watch } : {}) }));
     },
   },
 
-  commands: buildCommands(() => storePromise, () => publishIo),
+  commands: buildCommands(storeReady, () => publishIo),
 
   views: {
     // 방출된 사이드바(rail) — 컨테이너만 소유하고 내용은 결부 studio 의 App 이 포털로 그린다
@@ -185,7 +200,7 @@ export default {
         if (context.app.commands?.execute) {
           // 창-realm 로더: 컨트롤러와 뷰가 같은 모듈 인스턴스 — 컨트롤러 스토어(단일 권위)를
           // 직접 구독한다. CLI/MCP 명령의 변이가 즉시 뷰에 반영된다(폴링 0, 원격 미러 불요).
-          const store = await storePromise;
+          const store = await storeReady();
           const execute = context.app.commands.execute;
           mountApp(context.root, store, {
             restore: context.restore?.state,
